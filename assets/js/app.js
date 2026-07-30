@@ -16,7 +16,64 @@ async function searchAndChoose(query){const q=query.trim();if(!q)return;showStat
 async function searchPlaces(q){const m=q.match(/^(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)$/);if(m){const lat=+m[1],lng=+m[2];if(lat>=-90&&lat<=90&&lng>=-180&&lng<=180)return[{geometry:{coordinates:[lng,lat]},properties:{name:'Entered coordinates'}}]}const r=await fetchTimeout(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6`,10000);if(!r.ok)throw new Error();return(await r.json()).features||[]}
 function renderSuggestions(features){const box=$('#suggestions');box.innerHTML='';features.forEach(f=>{const b=document.createElement('button');b.type='button';b.className='suggestion';b.textContent=label(f.properties||{});b.addEventListener('click',()=>{const[lng,lat]=f.geometry.coordinates,p=f.properties||{};$('#place-search').value=b.textContent;hideSuggestions();chooseLocation(lat,lng,placeName(p),detail(p),meta(p))});box.appendChild(b)});box.hidden=!features.length}
 function hideSuggestions(){$('#suggestions').hidden=true}
-async function chooseLocation(lat,lng,name='Selected point',desc='',metadata={}){lat=+lat;lng=+lng;if(!Number.isFinite(lat)||!Number.isFinite(lng))return;const id=++activeLookup;if(!metadata.country||['Selected point','Random point'].includes(name)){showStatus('Identifying the selected location...');const r=await analyseOrigin(lat,lng);if(id!==activeLookup)return;name=r.name||name;desc=r.detail||desc;metadata={...metadata,...r.metadata}}const anti={lat:-lat,lng:lng>=0?lng-180:lng+180};state.origin={lat,lng,name,detail:desc||'Selected location',metadata};state.antipode={...anti,name:'Analysing...',country:'Calculating...',place:'Calculating...',distanceKm:null,area:'Calculating...',continent:'Calculating...'};renderAll();globe.controls().autoRotate=false;globe.pointsData([{lat,lng,label:name,color:'#1673ff'},{lat:anti.lat,lng:anti.lng,label:'Antipode',color:'#ff7a18'}]).pointColor('color');globe.arcsData([{startLat:lat,startLng:lng,endLat:anti.lat,endLng:anti.lng}]);globe.pointOfView({lat,lng,altitude:1.55},900);showStatus('Calculating nearest country and coastline...');try{const r=await analyseAntipode(anti.lat,anti.lng,id);if(!r||id!==activeLookup)return;state.antipode={...state.antipode,...r};showStatus('')}catch(e){console.error(e);state.antipode={...state.antipode,name:ocean(anti.lat,anti.lng),country:'Unavailable',place:'Unavailable',area:ocean(anti.lat,anti.lng),continent:'Unavailable'};showStatus('Nearest-land data is temporarily unavailable.')}renderAll();saveRecent(state.origin);updateShareUrl()}
+async function chooseLocation(lat,lng,name='Selected point',desc='',metadata={}){
+  lat=+lat;lng=+lng;
+  if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+  const id=++activeLookup;
+
+  if(!metadata.country||['Selected point','Random point'].includes(name)){
+    showStatus('Identifying the selected location...');
+    const r=await analyseOrigin(lat,lng);
+    if(id!==activeLookup)return;
+    name=r.name||name;
+    desc=r.detail||desc;
+    metadata={...metadata,...r.metadata};
+  }
+
+  const anti={lat:-lat,lng:lng>=0?lng-180:lng+180};
+  state.origin={lat,lng,name,detail:desc||'Selected location',metadata,live:null};
+  state.antipode={...anti,name:'Analysing...',country:'Calculating...',place:'Calculating...',distanceKm:null,area:'Calculating...',continent:'Calculating...',live:null};
+
+  renderAll();
+  globe.controls().autoRotate=false;
+  globe.pointsData([
+    {lat,lng,label:name,color:'#1673ff'},
+    {lat:anti.lat,lng:anti.lng,label:'Antipode',color:'#ff7a18'}
+  ]).pointColor('color');
+  globe.arcsData([{startLat:lat,startLng:lng,endLat:anti.lat,endLng:anti.lng}]);
+  globe.pointOfView({lat,lng,altitude:1.7},900);
+
+  showStatus('Loading location, time and temperature...');
+
+  try{
+    const [analysis,originLive,antipodeLive]=await Promise.all([
+      analyseAntipode(anti.lat,anti.lng,id),
+      fetchLiveConditions(lat,lng),
+      fetchLiveConditions(anti.lat,anti.lng)
+    ]);
+    if(id!==activeLookup)return;
+    if(analysis)state.antipode={...state.antipode,...analysis};
+    state.origin.live=originLive;
+    state.antipode.live=antipodeLive;
+    showStatus('');
+  }catch(e){
+    console.error(e);
+    if(id!==activeLookup)return;
+    state.antipode={
+      ...state.antipode,
+      name:ocean(anti.lat,anti.lng),
+      country:'Unavailable',
+      place:'Unavailable',
+      area:ocean(anti.lat,anti.lng),
+      continent:'Unavailable'
+    };
+    showStatus('Some live or nearest-land data is temporarily unavailable.');
+  }
+
+  renderAll();
+  saveRecent(state.origin);
+  updateShareUrl();
+}
 async function analyseOrigin(lat,lng){const rev=await reverse(lat,lng);let c=null;try{const eng=await loadEngine();c=findCountry(turf.point([lng,lat]),eng.countries)}catch{}const country=rev?.metadata.country&&rev.metadata.country!=='Country not identified'?rev.metadata.country:c?.name||'Country not identified';const city=rev?.metadata.city&&rev.metadata.city!=='Place not identified'?rev.metadata.city:country!=='Country not identified'?`Location in ${country}`:'Selected point';return{name:city,detail:rev?.detail||`Selected coordinates${country!=='Country not identified'?` in ${country}`:''}.`,metadata:{city,region:rev?.metadata.region||country,country,countryCode:rev?.metadata.countryCode||'',continent:rev?.metadata.continent||c?.continent||'Not identified'}}}
 async function analyseAntipode(lat,lng,id){const eng=await loadEngine();if(id!==activeLookup)return null;const point=turf.point([lng,lat]),inside=findCountry(point,eng.countries);if(inside){const rev=await reverse(lat,lng);return{name:rev?.metadata.city||`Location in ${inside.name}`,country:inside.name,place:rev?.metadata.city||`Location in ${inside.name}`,distanceKm:0,area:'Land',continent:inside.continent}}let best=null;for(const c of eng.countries)for(const line of c.lines)try{const n=turf.nearestPointOnLine(line,point,{units:'kilometers'}),d=Number(n.properties?.dist)||turf.distance(point,n,{units:'kilometers'});if(!best||d<best.distanceKm)best={country:c,point:n,distanceKm:d}}catch{}if(!best)throw new Error('No coastline');const[clng,clat]=best.point.geometry.coordinates,rev=await reverse(clat,clng),area=ocean(lat,lng);return{name:area,country:best.country.name,place:rev?.metadata.city||`Coast of ${best.country.name}`,distanceKm:best.distanceKm,area,continent:best.country.continent}}
 function renderAll(){
@@ -28,7 +85,8 @@ function renderAll(){
   $('#origin-coords').textContent=fmt(o.lat,o.lng);
   $('#origin-continent').textContent=o.metadata.continent||'Not identified';
   $('#origin-time').textContent=o.live?.localTime||'Loading…';
-  $('#origin-weather').textContent=o.live?.weatherText||'Loading…';
+  $('#origin-temperature').textContent=formatTemperature(o.live?.temperature);
+  $('#origin-daynight').textContent=o.live?(o.live.isDay?'Day ☀':'Night ☾'):'Loading…';
   $('#origin-season').textContent=season(o.lat);
 
   $('#antipode-name').textContent=a.name;
@@ -36,6 +94,9 @@ function renderAll(){
   $('#antipode-country').textContent=a.country;
   $('#antipode-place').textContent=a.place;
   $('#antipode-distance').textContent=a.distanceKm===0?'At exact point':Number.isFinite(a.distanceKm)?`${Math.round(a.distanceKm)} km`:'Calculating…';
+  $('#antipode-time').textContent=a.live?.localTime||'Loading…';
+  $('#antipode-temperature').textContent=formatTemperature(a.live?.temperature);
+  $('#antipode-daynight').textContent=a.live?(a.live.isDay?'Day ☀':'Night ☾'):'Loading…';
   $('#antipode-area').textContent=a.area;
 
   $('#metric-through-earth').textContent='12,742 km';
@@ -43,12 +104,9 @@ function renderAll(){
   $('#metric-land-distance').textContent=Number.isFinite(a.distanceKm)?`${Math.round(a.distanceKm)} km`:'Calculating…';
 
   if(o.live&&a.live){
-    const diffHours=(a.live.utcOffsetSeconds-o.live.utcOffsetSeconds)/3600;
-    $('#metric-time').textContent=`${diffHours>=0?'+':''}${formatHourDifference(diffHours)}`;
     $('#metric-daynight').textContent=`${o.live.isDay?'Day ☀':'Night ☾'} / ${a.live.isDay?'Day ☀':'Night ☾'}`;
     $('#metric-temperature').textContent=`${formatTemperature(o.live.temperature)} / ${formatTemperature(a.live.temperature)}`;
   }else{
-    $('#metric-time').textContent='Loading…';
     $('#metric-daynight').textContent='Loading…';
     $('#metric-temperature').textContent='Loading…';
   }
@@ -90,7 +148,7 @@ async function fetchLiveConditions(lat,lng){
       +new URLSearchParams({
         latitude:String(lat),
         longitude:String(lng),
-        current:'temperature_2m,weather_code,is_day',
+        current:'temperature_2m,is_day',
         timezone:'auto',
         forecast_days:'1'
       });
@@ -99,8 +157,6 @@ async function fetchLiveConditions(lat,lng){
     const data=await r.json();
     return{
       temperature:data.current?.temperature_2m,
-      weatherCode:data.current?.weather_code,
-      weatherText:weatherDescription(data.current?.weather_code),
       isDay:Boolean(data.current?.is_day),
       localTime:formatLocalApiTime(data.current?.time),
       timezone:data.timezone||'',
@@ -108,21 +164,11 @@ async function fetchLiveConditions(lat,lng){
     };
   }catch{
     return{
-      temperature:null,weatherCode:null,weatherText:'Unavailable',
+      temperature:null,
       isDay:dayNight(lng).startsWith('Day'),
       localTime:approxTime(lng),timezone:'',utcOffsetSeconds:Math.round(lng/15)*3600
     };
   }
-}
-function weatherDescription(code){
-  const map={
-    0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
-    45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
-    61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',
-    75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',
-    95:'Thunderstorm',96:'Thunderstorm with hail',99:'Severe thunderstorm'
-  };
-  return map[code]||'Current conditions';
 }
 function formatLocalApiTime(value){
   if(!value)return'Unavailable';
@@ -131,14 +177,6 @@ function formatLocalApiTime(value){
 }
 function formatTemperature(value){
   return Number.isFinite(Number(value))?`${Math.round(Number(value))}°C`:'Unavailable';
-}
-function formatHourDifference(value){
-  if(Number.isInteger(value))return`${value}h`;
-  const sign=value<0?'-':'';
-  const abs=Math.abs(value);
-  const h=Math.floor(abs);
-  const m=Math.round((abs-h)*60);
-  return`${sign}${h}h ${m}m`;
 }
 function season(lat){const m=new Date().getUTCMonth()+1,n=m>=3&&m<=5?'Spring':m<=8?'Summer':m<=11?'Autumn':'Winter',op={Spring:'Autumn',Summer:'Winter',Autumn:'Spring',Winter:'Summer'};return lat>=0?n:op[n]}function approxTime(lng){const d=new Date(),h=d.getUTCHours()+Math.round(lng/15);return`${String((h+24)%24).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`}function dayNight(lng){const h=(new Date().getUTCHours()+Math.round(lng/15)+24)%24;return h>=6&&h<18?'Day ☀':'Night ☾'}function fmt(lat,lng){return`${Math.abs(lat).toFixed(4)}° ${lat>=0?'N':'S'}, ${Math.abs(lng).toFixed(4)}° ${lng>=0?'E':'W'}`}function showStatus(m){$('#status').textContent=m}async function fetchTimeout(url,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{return await fetch(url,{signal:c.signal})}finally{clearTimeout(t)}}function esc(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function saveRecent(o){const e={name:o.name,lat:o.lat,lng:o.lng},a=getRecent().filter(x=>x.name!==e.name);a.unshift(e);localStorage.setItem('af-recent',JSON.stringify(a.slice(0,6)));renderRecent()}function getRecent(){try{return JSON.parse(localStorage.getItem('af-recent'))||[]}catch{return[]}}function renderRecent(){const list=$('#recent-list');if(!list)return;const a=getRecent();list.innerHTML='';if(!a.length){const li=document.createElement('li');li.textContent='No recent searches yet.';list.appendChild(li);return;}a.forEach(x=>{const li=document.createElement('li');li.textContent=x.name;li.addEventListener('click',()=>chooseLocation(x.lat,x.lng,x.name));list.appendChild(li)})}

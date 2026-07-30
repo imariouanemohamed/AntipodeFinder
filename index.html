@@ -36,10 +36,8 @@
       <div class="divider"></div>
       <p class="sidebar-title">TOOLS</p>
       <a class="side-link" href="#metrics">⌁ Distance Calculator</a>
-      <a class="side-link" href="#metrics">◷ Time Difference</a>
       <a class="side-link" href="#metrics">☼ Sun & Moon</a>
       <a class="side-link" href="#metrics">☂ Weather Comparison</a>
-      <a class="side-link" href="#ocean">≋ Ocean Explorer</a>
       <a class="side-link" href="#facts">▥ Earth Statistics</a>
     </section>
     <section class="discover-card" aria-labelledby="discover-more-title">
@@ -84,17 +82,16 @@
       </div>
 
       <div class="globe-stage">
-        <article class="location-card origin-card"><p class="card-kicker blue">● YOUR LOCATION</p><h2 id="origin-name">Choose a place</h2><p id="origin-country">Search above to begin</p><strong id="origin-coords">—</strong><dl><div><dt>Continent</dt><dd id="origin-continent">—</dd></div><div><dt>Time</dt><dd id="origin-time">—</dd></div><div><dt>Weather</dt><dd id="origin-weather">—</dd></div><div><dt>Season</dt><dd id="origin-season">—</dd></div></dl><button id="origin-details-btn" class="secondary" type="button">ⓘ View details</button></article>
+        <article class="location-card origin-card"><p class="card-kicker blue">● YOUR LOCATION</p><h2 id="origin-name">Choose a place</h2><p id="origin-country">Search above to begin</p><strong id="origin-coords">—</strong><dl><div><dt>Continent</dt><dd id="origin-continent">—</dd></div><div><dt>Local time</dt><dd id="origin-time">—</dd></div><div><dt>Temperature</dt><dd id="origin-temperature">—</dd></div><div><dt>Day / night</dt><dd id="origin-daynight">—</dd></div><div><dt>Season</dt><dd id="origin-season">—</dd></div></dl><button id="origin-details-btn" class="secondary" type="button">ⓘ View details</button></article>
         <div id="globe" aria-label="Interactive 3D Earth"></div>
-        <article class="location-card antipode-card"><p class="card-kicker orange">● EXACT ANTIPODE</p><h2 id="antipode-name">Opposite point</h2><p id="antipode-coords">—</p><dl><div><dt>Nearest country</dt><dd id="antipode-country">—</dd></div><div><dt>Closest place</dt><dd id="antipode-place">—</dd></div><div><dt>Distance to land</dt><dd id="antipode-distance">—</dd></div><div><dt>Ocean / area</dt><dd id="antipode-area">—</dd></div></dl><button id="antipode-details-btn" class="secondary" type="button">ⓘ View details</button></article>
+        <article class="location-card antipode-card"><p class="card-kicker orange">● EXACT ANTIPODE</p><h2 id="antipode-name">Opposite point</h2><p id="antipode-coords">—</p><dl><div><dt>Nearest country</dt><dd id="antipode-country">—</dd></div><div><dt>Closest place</dt><dd id="antipode-place">—</dd></div><div><dt>Distance to land</dt><dd id="antipode-distance">—</dd></div><div><dt>Local time</dt><dd id="antipode-time">—</dd></div><div><dt>Temperature</dt><dd id="antipode-temperature">—</dd></div><div><dt>Day / night</dt><dd id="antipode-daynight">—</dd></div><div><dt>Ocean / area</dt><dd id="antipode-area">—</dd></div></dl><button id="antipode-details-btn" class="secondary" type="button">ⓘ View details</button></article>
       </div>
 
       <div id="metrics" class="metric-strip">
         <article><span>↕</span><small>Through Earth</small><strong id="metric-through-earth">12,742 km</strong><em>Earth diameter</em></article>
         <article><span>⌒</span><small>Surface distance</small><strong id="metric-surface-distance">20,015 km</strong><em>Half Earth circumference</em></article>
-        <article><span>◷</span><small>Local time difference</small><strong id="metric-time">—</strong><em>Real time zones</em></article>
-        <article><span>☀</span><small>Day & night</small><strong id="metric-daynight">—</strong><em>Current conditions</em></article>
-        <article><span>♨</span><small>Current temperature</small><strong id="metric-temperature">—</strong><em>Open-Meteo</em></article>
+        <article><span>☀</span><small>Day & night</small><strong id="metric-daynight">—</strong><em>Origin / antipode</em></article>
+        <article><span>♨</span><small>Current temperature</small><strong id="metric-temperature">—</strong><em>Origin / antipode</em></article>
         <article><span>▲</span><small>Distance to land</small><strong id="metric-land-distance">—</strong><em>Nearest coastline</em></article>
       </div>
     </section>
@@ -106,7 +103,6 @@
         <button class="tool-card coming-soon" type="button" data-coming-soon="Compare Locations"><span>🧭</span><b>Coming soon</b><h3>Compare Locations</h3><p>Compare two chosen places side by side.</p></button>
         <button id="random-card-btn" class="tool-card available" type="button"><span>🎲</span><b>Available</b><h3>Random Explorer</h3><p>Discover a random location and its antipode.</p></button>
         <button id="famous-card-btn" class="tool-card available" type="button"><span>🏛️</span><b>Available</b><h3>Famous Places</h3><p>Explore antipodes of famous landmarks.</p></button>
-        <button class="tool-card coming-soon" type="button" data-coming-soon="Ocean Explorer"><span>🌊</span><b>Coming soon</b><h3>Ocean Explorer</h3><p>Bathymetry, currents and marine information.</p></button>
       </div>
     </section>
 

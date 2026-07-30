@@ -1,60 +1,31 @@
-# AntipodeFinder V7.1
+# AntipodeFinder V8
 
-A corrected public-facing version of the V7 dashboard.
+## Main changes
 
-## What is operational
-
-- Search by city, country, address, landmark, or coordinates
-- Browser current location
-- Clickable 3D globe
-- Exact antipode coordinates
-- Country polygon detection
-- Nearest country and coastline calculation
-- Approximate distance to land
-- Ocean/land classification
-- Real current temperature, weather description, local time, UTC offset, and day/night from Open-Meteo
-- Recent searches
-- Random explorer
-- Famous-place explorer
-- Shareable URLs
-- Copy and share result
-- Details modal
-
-## Important V7.1 corrections
-
-- Removed the premature Premium card.
-- Removed placeholder labels such as “API ready” and “Ocean data”.
-- Correctly separates:
-  - Through-Earth distance: about 12,742 km
-  - Surface antipodal distance: about 20,015 km
-- Replaced ocean depth with the operational distance-to-land calculation.
-- Unfinished tools are explicitly labeled “Coming soon”.
-- Lowered and resized the globe to prevent overlap with the metrics.
-- Added popular searches and a cleaner footer.
+- Enlarged and freed the globe so it is no longer squeezed between the information cards.
+- Moved the globe upward and increased its visual scale.
+- Reduced and compacted the location cards.
+- Added real local time to both the origin and antipode cards.
+- Replaced weather descriptions with current temperature only.
+- Added explicit Day / Night status to both cards.
+- Removed Time Difference from the sidebar and metric strip.
+- Removed Ocean Explorer from the sidebar and Explore More section.
+- Fixed live data loading: origin and antipode time, temperature, and day/night now load together.
+- Retained nearest country, nearest place, coastline distance, exact coordinates, recent searches, Random Explorer, and Famous Places.
 
 ## Deployment
 
+After replacing the old project files:
+
 ```bash
 git add .
-git commit -m "Launch AntipodeFinder V7.1"
-git push
+git commit -m "Launch AntipodeFinder V8"
+git push origin main
 ```
 
 ## External services
 
-- Photon / OpenStreetMap for place search and reverse geocoding
-- Open-Meteo for current weather and local timezone
-- World Atlas + Turf.js for country and coastline analysis
-- Globe.gl for the 3D Earth
-
-## V7.1.1 sidebar cleanup
-
-- Removed Travel Planner from the sidebar and Explore More section.
-- Removed Tectonic Plates from the sidebar.
-
-
-## V7.2 changes
-- Fixed the Discover More “Random Explorer” action by adding the missing `randomLocation()` function.
-- The left-sidebar Random Explorer now uses the same tested function.
-- Redesigned Random Explorer and Famous Places as compact navigation cards matching the site typography, borders, spacing, and hover behavior.
-- Added keyboard focus styling and clearer secondary text.
+- Open-Meteo: local time, current temperature, and day/night
+- Photon / OpenStreetMap: search and reverse geocoding
+- World Atlas + Turf.js: country and coastline analysis
+- Globe.gl: interactive Earth
