@@ -1,4 +1,4 @@
-# AntipodeFinder V6.1
+# AntipodeFinder V6.2
 
 V6 replaces the unreliable repeated ocean reverse-geocoding loop with a coastline-based geographic engine.
 
@@ -63,3 +63,12 @@ Cloudflare Workers should serve the project normally because these resources are
 - Removed the separate “Use my current location” button below the search bar.
 - Selecting “Use my current location” immediately starts browser geolocation.
 - Selecting “Choose another location” focuses the city/country/address search field.
+
+
+## V6.2 location-button fix
+
+- Fixed a JavaScript error caused by a listener targeting the removed `#locate-btn`.
+- Connected the new “Use my current location” tab correctly.
+- Added secure-context detection because browser geolocation requires HTTPS.
+- Added clearer messages for denied permission, unavailable position, and timeout.
+- Changed geolocation to a faster balanced accuracy mode.

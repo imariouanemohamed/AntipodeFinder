@@ -791,15 +791,22 @@ $("#search-form").addEventListener("submit", (event) => {
 });
 
 async function locateUser() {
+  if (!window.isSecureContext) {
+    showStatus("Current location requires HTTPS. Open the live AntipodeFinder.com website rather than a local file.");
+    return;
+  }
+
   if (!navigator.geolocation) {
     showStatus("Geolocation is not supported by this browser.");
     return;
   }
 
-  showStatus("Requesting your location…");
+  showStatus("Allow location access in your browser to continue…");
 
   navigator.geolocation.getCurrentPosition(
     async ({ coords }) => {
+      showStatus("Location found. Calculating your antipode…");
+
       const place = await reverseGeocode(
         coords.latitude,
         coords.longitude
@@ -808,7 +815,7 @@ async function locateUser() {
       await chooseLocation(
         coords.latitude,
         coords.longitude,
-        place?.name || "Your location",
+        place?.name || "Your current location",
         place?.detail || "Detected by your device.",
         place?.metadata || {}
       );
@@ -818,20 +825,54 @@ async function locateUser() {
         block: "start"
       });
     },
-    () =>
+    (error) => {
+      const messages = {
+        1: "Location permission was denied. Click the lock icon beside the website address, allow Location, then try again.",
+        2: "Your position could not be determined. Check that device location services are enabled.",
+        3: "Finding your location took too long. Try again or search for your city."
+      };
+
       showStatus(
-        "Location access was unavailable. Search for your city instead."
-      ),
+        messages[error.code] ||
+        "Location access failed. Search for your city instead."
+      );
+
+      currentLocationTab?.classList.remove("active");
+      searchLocationTab?.classList.add("active");
+      currentLocationTab?.setAttribute("aria-selected", "false");
+      searchLocationTab?.setAttribute("aria-selected", "true");
+    },
     {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 300000
+      enableHighAccuracy: false,
+      timeout: 15000,
+      maximumAge: 600000
     }
   );
 }
 
-$("#locate-btn").addEventListener("click", locateUser);
-$("#header-location-btn").addEventListener("click", locateUser);
+const currentLocationTab = $("#current-location-tab");
+const searchLocationTab = $("#search-location-tab");
+const headerLocationButton = $("#header-location-btn");
+
+function setFinderMode(mode) {
+  const useCurrentLocation = mode === "current";
+
+  currentLocationTab?.classList.toggle("active", useCurrentLocation);
+  searchLocationTab?.classList.toggle("active", !useCurrentLocation);
+
+  currentLocationTab?.setAttribute("aria-selected", String(useCurrentLocation));
+  searchLocationTab?.setAttribute("aria-selected", String(!useCurrentLocation));
+
+  if (useCurrentLocation) {
+    locateUser();
+  } else {
+    searchInput.focus();
+  }
+}
+
+currentLocationTab?.addEventListener("click", () => setFinderMode("current"));
+searchLocationTab?.addEventListener("click", () => setFinderMode("search"));
+headerLocationButton?.addEventListener("click", () => setFinderMode("current"));
 
 $("#new-search-btn").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
