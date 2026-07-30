@@ -50,31 +50,80 @@
       </div>
     </section>
 
-    <section id="result" class="result-card" hidden>
-      <div class="result-heading">
-        <div>
-          <p class="eyebrow">YOUR RESULT</p>
-          <h2><span id="origin-name">Selected point</span> ↔ <span id="antipode-name">Opposite point</span></h2>
-        </div>
-        <button id="share-btn" class="share-btn" type="button">Copy result</button>
-      </div>
+   <section id="result" class="result-card" hidden>
+  <div class="result-heading">
+    <div>
+      <p class="eyebrow">YOUR RESULT</p>
+      <h2>
+        <span id="origin-name">Selected point</span>
+        ↔
+        <span id="antipode-name">Opposite point</span>
+      </h2>
+    </div>
 
-      <div class="result-grid">
-        <article>
-          <span class="dot origin-dot"></span>
-          <h3>Starting location</h3>
-          <strong id="origin-coords">—</strong>
-          <p id="origin-detail">—</p>
-        </article>
-        <div class="through-earth" aria-hidden="true">12,742 km<br><small>through Earth</small></div>
-        <article>
-          <span class="dot antipode-dot"></span>
-          <h3>Antipode</h3>
-          <strong id="antipode-coords">—</strong>
-          <p id="antipode-detail">—</p>
-        </article>
-      </div>
-    </section>
+    <button id="share-btn" class="share-btn" type="button">
+      Copy result
+    </button>
+  </div>
+
+  <div class="result-grid">
+    <article>
+      <span class="dot origin-dot"></span>
+      <h3>Starting location</h3>
+
+      <strong id="origin-coords">—</strong>
+      <p id="origin-detail">—</p>
+
+      <dl class="location-meta">
+        <div>
+          <dt>City or place</dt>
+          <dd id="origin-city">—</dd>
+        </div>
+
+        <div>
+          <dt>Region</dt>
+          <dd id="origin-region">—</dd>
+        </div>
+
+        <div>
+          <dt>Country</dt>
+          <dd id="origin-country">—</dd>
+        </div>
+      </dl>
+    </article>
+
+    <div class="through-earth" aria-hidden="true">
+      12,742 km
+      <br>
+      <small>through Earth</small>
+    </div>
+
+    <article>
+      <span class="dot antipode-dot"></span>
+      <h3>Antipode</h3>
+
+      <strong id="antipode-coords">—</strong>
+      <p id="antipode-detail">—</p>
+
+      <dl class="location-meta">
+        <div>
+          <dt>Nearest named place</dt>
+          <dd id="antipode-city">—</dd>
+        </div>
+
+        <div>
+          <dt>Region</dt>
+          <dd id="antipode-region">—</dd>
+        </div>
+
+        <div>
+          <dt>Country or area</dt>
+          <dd id="antipode-country">—</dd>
+        </div>
+      </dl>
+    </article>
+  </div>
+</section>
 
     <section id="how-it-works" class="content-section">
       <div>
