@@ -46,3 +46,8 @@ git push
 - Open-Meteo for current weather and local timezone
 - World Atlas + Turf.js for country and coastline analysis
 - Globe.gl for the 3D Earth
+
+## V7.1.1 sidebar cleanup
+
+- Removed Travel Planner from the sidebar and Explore More section.
+- Removed Tectonic Plates from the sidebar.
