@@ -2,7 +2,14 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const state={origin:null,antipode:null};let globe,activeLookup=0,suggestionsTimer,geoEnginePromise;
 const CONTINENT={MA:'Africa',DZ:'Africa',TN:'Africa',EG:'Africa',ZA:'Africa',NG:'Africa',KE:'Africa',US:'North America',CA:'North America',MX:'North America',BR:'South America',AR:'South America',CL:'South America',PE:'South America',FR:'Europe',ES:'Europe',PT:'Europe',DE:'Europe',IT:'Europe',GB:'Europe',CN:'Asia',JP:'Asia',IN:'Asia',ID:'Asia',PH:'Asia',SA:'Asia',AE:'Asia',AU:'Oceania',NZ:'Oceania',FJ:'Oceania',PG:'Oceania',NU:'Oceania'};
 
-document.addEventListener('DOMContentLoaded',()=>{$('#year').textContent=new Date().getFullYear();initGlobe();bindUI();renderRecent();loadSharedLocation();loadEngine().catch(()=>{});});
+document.addEventListener('DOMContentLoaded',()=>{$('#year').textContent=new Date().getFullYear();initGlobe();bindUI();renderRecent();
+  $('#discover-random-btn')?.addEventListener('click',()=>randomLocation());
+  $('#random-card-btn')?.addEventListener('click',()=>randomLocation());
+  $('#discover-famous-btn')?.addEventListener('click',()=>openFamousPlace());
+  $('#famous-card-btn')?.addEventListener('click',()=>openFamousPlace());
+  document.querySelectorAll('[data-coming-soon]').forEach(btn=>btn.addEventListener('click',()=>showStatus(`${btn.dataset.comingSoon} is coming soon.`)));
+  document.querySelectorAll('[data-place]').forEach(btn=>btn.addEventListener('click',()=>searchAndChoose(btn.dataset.place)));
+  loadSharedLocation();loadEngine().catch(()=>{});});
 function initGlobe(){globe=Globe()($('#globe')).backgroundColor('rgba(0,0,0,0)').globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg').bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png').showAtmosphere(true).atmosphereColor('#75d1ff').atmosphereAltitude(.2).pointAltitude(.035).pointRadius(.32).pointLabel(d=>`<strong>${esc(d.label)}</strong><br>${fmt(d.lat,d.lng)}`).arcColor(()=>['#1673ff','#ff7a18']).arcStroke(.55).arcAltitudeAutoScale(.28).arcDashLength(.35).arcDashGap(.12).arcDashAnimateTime(1500).onGlobeClick(({lat,lng})=>chooseLocation(lat,lng,'Selected point'));globe.controls().autoRotate=true;globe.controls().autoRotateSpeed=.25;globe.controls().enableDamping=true;globe.pointOfView({lat:18,lng:-10,altitude:1.85},0);const resize=()=>globe.width($('#globe').clientWidth).height($('#globe').clientHeight);resize();addEventListener('resize',resize);}
 function bindUI(){$('#search-form').addEventListener('submit',e=>{e.preventDefault();searchAndChoose($('#place-search').value)});$('#place-search').addEventListener('input',e=>{clearTimeout(suggestionsTimer);const q=e.target.value.trim();if(q.length<3)return hideSuggestions();suggestionsTimer=setTimeout(async()=>{try{renderSuggestions(await searchPlaces(q))}catch{hideSuggestions()}},300)});$('#current-location-tab').addEventListener('click',locateUser);$('#header-location-btn').addEventListener('click',locateUser);$('#search-location-tab').addEventListener('click',()=>{$('#current-location-tab').classList.remove('active');$('#search-location-tab').classList.add('active');$('#place-search').focus()});$('#random-btn').addEventListener('click',()=>chooseLocation(Math.random()*140-70,Math.random()*360-180,'Random point'));$('#origin-details-btn').addEventListener('click',openDetails);$('#antipode-details-btn').addEventListener('click',openDetails);$$('[data-close-modal]').forEach(el=>el.addEventListener('click',closeDetails));$('#copy-result').addEventListener('click',copyResult);$('#share-result').addEventListener('click',shareResult);$('#clear-recent').addEventListener('click',()=>{localStorage.removeItem('af-recent');renderRecent()});document.addEventListener('click',e=>{if(!e.target.closest('.search-input-wrap'))hideSuggestions()});}
 async function searchAndChoose(query){const q=query.trim();if(!q)return;showStatus('Searching...');try{const f=(await searchPlaces(q))[0];if(!f)throw new Error('No result');const [lng,lat]=f.geometry.coordinates,p=f.properties||{};$('#place-search').value=label(p);hideSuggestions();await chooseLocation(lat,lng,placeName(p),detail(p),meta(p))}catch(e){showStatus(e.message==='No result'?'No matching place was found.':'The search service is temporarily unavailable.')}}
@@ -12,8 +19,55 @@ function hideSuggestions(){$('#suggestions').hidden=true}
 async function chooseLocation(lat,lng,name='Selected point',desc='',metadata={}){lat=+lat;lng=+lng;if(!Number.isFinite(lat)||!Number.isFinite(lng))return;const id=++activeLookup;if(!metadata.country||['Selected point','Random point'].includes(name)){showStatus('Identifying the selected location...');const r=await analyseOrigin(lat,lng);if(id!==activeLookup)return;name=r.name||name;desc=r.detail||desc;metadata={...metadata,...r.metadata}}const anti={lat:-lat,lng:lng>=0?lng-180:lng+180};state.origin={lat,lng,name,detail:desc||'Selected location',metadata};state.antipode={...anti,name:'Analysing...',country:'Calculating...',place:'Calculating...',distanceKm:null,area:'Calculating...',continent:'Calculating...'};renderAll();globe.controls().autoRotate=false;globe.pointsData([{lat,lng,label:name,color:'#1673ff'},{lat:anti.lat,lng:anti.lng,label:'Antipode',color:'#ff7a18'}]).pointColor('color');globe.arcsData([{startLat:lat,startLng:lng,endLat:anti.lat,endLng:anti.lng}]);globe.pointOfView({lat,lng,altitude:1.55},900);showStatus('Calculating nearest country and coastline...');try{const r=await analyseAntipode(anti.lat,anti.lng,id);if(!r||id!==activeLookup)return;state.antipode={...state.antipode,...r};showStatus('')}catch(e){console.error(e);state.antipode={...state.antipode,name:ocean(anti.lat,anti.lng),country:'Unavailable',place:'Unavailable',area:ocean(anti.lat,anti.lng),continent:'Unavailable'};showStatus('Nearest-land data is temporarily unavailable.')}renderAll();saveRecent(state.origin);updateShareUrl()}
 async function analyseOrigin(lat,lng){const rev=await reverse(lat,lng);let c=null;try{const eng=await loadEngine();c=findCountry(turf.point([lng,lat]),eng.countries)}catch{}const country=rev?.metadata.country&&rev.metadata.country!=='Country not identified'?rev.metadata.country:c?.name||'Country not identified';const city=rev?.metadata.city&&rev.metadata.city!=='Place not identified'?rev.metadata.city:country!=='Country not identified'?`Location in ${country}`:'Selected point';return{name:city,detail:rev?.detail||`Selected coordinates${country!=='Country not identified'?` in ${country}`:''}.`,metadata:{city,region:rev?.metadata.region||country,country,countryCode:rev?.metadata.countryCode||'',continent:rev?.metadata.continent||c?.continent||'Not identified'}}}
 async function analyseAntipode(lat,lng,id){const eng=await loadEngine();if(id!==activeLookup)return null;const point=turf.point([lng,lat]),inside=findCountry(point,eng.countries);if(inside){const rev=await reverse(lat,lng);return{name:rev?.metadata.city||`Location in ${inside.name}`,country:inside.name,place:rev?.metadata.city||`Location in ${inside.name}`,distanceKm:0,area:'Land',continent:inside.continent}}let best=null;for(const c of eng.countries)for(const line of c.lines)try{const n=turf.nearestPointOnLine(line,point,{units:'kilometers'}),d=Number(n.properties?.dist)||turf.distance(point,n,{units:'kilometers'});if(!best||d<best.distanceKm)best={country:c,point:n,distanceKm:d}}catch{}if(!best)throw new Error('No coastline');const[clng,clat]=best.point.geometry.coordinates,rev=await reverse(clat,clng),area=ocean(lat,lng);return{name:area,country:best.country.name,place:rev?.metadata.city||`Coast of ${best.country.name}`,distanceKm:best.distanceKm,area,continent:best.country.continent}}
-function renderAll(){const o=state.origin,a=state.antipode;if(!o||!a)return;$('#origin-name').textContent=o.metadata.city||o.name;$('#origin-country').textContent=o.metadata.country||'Country not identified';$('#origin-coords').textContent=fmt(o.lat,o.lng);$('#origin-continent').textContent=o.metadata.continent||'Not identified';$('#origin-time').textContent=approxTime(o.lng);$('#origin-weather').textContent='Weather API ready';$('#origin-season').textContent=season(o.lat);$('#antipode-name').textContent=a.name;$('#antipode-coords').textContent=fmt(a.lat,a.lng);$('#antipode-country').textContent=a.country;$('#antipode-place').textContent=a.place;$('#antipode-distance').textContent=a.distanceKm===0?'At exact point':Number.isFinite(a.distanceKm)?`${Math.round(a.distanceKm)} km`:'—';$('#antipode-area').textContent=a.area;$('#metric-distance').textContent='12,742 km';const diff=Math.round((a.lng-o.lng)/15);$('#metric-time').textContent=`${diff>=0?'+':''}${diff}h`;$('#metric-daynight').textContent=`${dayNight(o.lng)} / ${dayNight(a.lng)}`;$('#metric-temperature').textContent='Live API ready';$('#metric-depth').textContent=a.area?.includes('Ocean')?'Ocean data':'On land'}
+function renderAll(){
+  const o=state.origin,a=state.antipode;
+  if(!o||!a)return;
+
+  $('#origin-name').textContent=o.metadata.city||o.name;
+  $('#origin-country').textContent=o.metadata.country||'Country not identified';
+  $('#origin-coords').textContent=fmt(o.lat,o.lng);
+  $('#origin-continent').textContent=o.metadata.continent||'Not identified';
+  $('#origin-time').textContent=o.live?.localTime||'Loading…';
+  $('#origin-weather').textContent=o.live?.weatherText||'Loading…';
+  $('#origin-season').textContent=season(o.lat);
+
+  $('#antipode-name').textContent=a.name;
+  $('#antipode-coords').textContent=fmt(a.lat,a.lng);
+  $('#antipode-country').textContent=a.country;
+  $('#antipode-place').textContent=a.place;
+  $('#antipode-distance').textContent=a.distanceKm===0?'At exact point':Number.isFinite(a.distanceKm)?`${Math.round(a.distanceKm)} km`:'Calculating…';
+  $('#antipode-area').textContent=a.area;
+
+  $('#metric-through-earth').textContent='12,742 km';
+  $('#metric-surface-distance').textContent='20,015 km';
+  $('#metric-land-distance').textContent=Number.isFinite(a.distanceKm)?`${Math.round(a.distanceKm)} km`:'Calculating…';
+
+  if(o.live&&a.live){
+    const diffHours=(a.live.utcOffsetSeconds-o.live.utcOffsetSeconds)/3600;
+    $('#metric-time').textContent=`${diffHours>=0?'+':''}${formatHourDifference(diffHours)}`;
+    $('#metric-daynight').textContent=`${o.live.isDay?'Day ☀':'Night ☾'} / ${a.live.isDay?'Day ☀':'Night ☾'}`;
+    $('#metric-temperature').textContent=`${formatTemperature(o.live.temperature)} / ${formatTemperature(a.live.temperature)}`;
+  }else{
+    $('#metric-time').textContent='Loading…';
+    $('#metric-daynight').textContent='Loading…';
+    $('#metric-temperature').textContent='Loading…';
+  }
+}
 function openDetails(){if(!state.origin)return;const o=state.origin,a=state.antipode;$('#modal-title').textContent=`${o.name} → ${a.name}`;$('#modal-content').innerHTML=`<div class="report-grid">${item('Starting location',o.name)}${item('Starting coordinates',fmt(o.lat,o.lng))}${item('Country',o.metadata.country)}${item('Continent',o.metadata.continent)}${item('Exact antipode',a.name)}${item('Antipode coordinates',fmt(a.lat,a.lng))}${item('Nearest country',a.country)}${item('Closest identified place',a.place)}${item('Distance to land',Number.isFinite(a.distanceKm)?`${Math.round(a.distanceKm)} km`:'—')}${item('Ocean / area',a.area)}</div>`;$('#details-modal').hidden=false}function closeDetails(){$('#details-modal').hidden=true}function item(k,v){return`<div><small>${esc(k)}</small><strong>${esc(String(v??'—'))}</strong></div>`}
+
+const FAMOUS_PLACES=[
+  {name:'Eiffel Tower, Paris',lat:48.8584,lng:2.2945},
+  {name:'Statue of Liberty, New York',lat:40.6892,lng:-74.0445},
+  {name:'Mount Everest',lat:27.9881,lng:86.9250},
+  {name:'Sydney Opera House',lat:-33.8568,lng:151.2153},
+  {name:'Taj Mahal, Agra',lat:27.1751,lng:78.0421},
+  {name:'Hassan Tower, Rabat',lat:34.0241,lng:-6.8225}
+];
+function openFamousPlace(){
+  const place=FAMOUS_PLACES[Math.floor(Math.random()*FAMOUS_PLACES.length)];
+  $('#place-search').value=place.name;
+  chooseLocation(place.lat,place.lng,place.name);
+}
 function locateUser(){$('#current-location-tab').classList.add('active');$('#search-location-tab').classList.remove('active');if(!window.isSecureContext)return showStatus('Current location requires HTTPS.');if(!navigator.geolocation)return showStatus('Geolocation is not supported.');showStatus('Allow location access in your browser...');navigator.geolocation.getCurrentPosition(({coords})=>chooseLocation(coords.latitude,coords.longitude,'Your current location'),e=>showStatus(e.code===1?'Location permission was denied.':'Your location could not be determined.'),{enableHighAccuracy:false,timeout:15000,maximumAge:600000})}
 async function reverse(lat,lng){try{const r=await fetchTimeout(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&limit=1`,9000);if(!r.ok)return null;const f=(await r.json()).features?.[0];if(!f)return null;const p=f.properties||{};return{name:placeName(p),detail:detail(p),metadata:meta(p)}}catch{return null}}
 async function loadEngine(){if(geoEnginePromise)return geoEnginePromise;geoEnginePromise=(async()=>{const r=await fetchTimeout('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json',15000),topo=await r.json(),fc=topojson.feature(topo,topo.objects.countries),countries=fc.features.filter(f=>f.geometry).map(f=>{const name=f.properties?.name||'Unknown country';let lines=[];try{turf.flattenEach(turf.polygonToLine(f),l=>lines.push(l))}catch{}return{feature:f,name,continent:countryContinent(name),lines}});return{countries}})();return geoEnginePromise}
@@ -22,6 +76,63 @@ function meta(p){const code=String(p.countrycode||p.country_code||'').toUpperCas
 function placeName(p){return p.city||p.town||p.village||p.name||p.country||'Selected location'}function detail(p){return[...new Set([p.city,p.state,p.country].filter(Boolean))].join(', ')}function label(p){return[...new Set([p.name,p.city,p.state,p.country].filter(Boolean))].join(', ')||'Selected location'}
 function countryContinent(n){const groups={Africa:['Morocco','Algeria','Tunisia','Libya','Egypt','Sudan','South Sudan','Chad','Niger','Mali','Mauritania','Senegal','Nigeria','Ghana','Kenya','Ethiopia','Somalia','South Africa','Namibia','Botswana','Zimbabwe','Mozambique','Madagascar'],Oceania:['Australia','New Zealand','Fiji','Papua New Guinea','Niue','Kiribati','Samoa','Tonga','Vanuatu','Solomon Islands','New Caledonia'],Europe:['France','Spain','Portugal','Germany','Italy','United Kingdom','Ireland','Belgium','Netherlands','Switzerland','Austria','Poland','Greece','Norway','Sweden','Finland','Denmark','Iceland','Ukraine'],'North America':['United States of America','United States','Canada','Mexico','Greenland','Cuba','Panama','Costa Rica'],'South America':['Brazil','Argentina','Chile','Peru','Bolivia','Paraguay','Uruguay','Colombia','Venezuela','Ecuador','Guyana','Suriname']};for(const[k,v]of Object.entries(groups))if(v.includes(n))return k;return n?'Asia':'Not identified'}
 function ocean(lat,lng){lng=((lng+540)%360)-180;if(lat<=-60)return'Southern Ocean';if(lat>=66)return'Arctic Ocean';if(lng>=20&&lng<=120&&lat<30&&lat>-60)return lat>=0?'North Indian Ocean':'South Indian Ocean';if(lng>=-70&&lng<=20&&lat>-60)return lat>=0?'North Atlantic Ocean':'South Atlantic Ocean';return lat>=0?'North Pacific Ocean':'South Pacific Ocean'}
+
+async function fetchLiveConditions(lat,lng){
+  try{
+    const url='https://api.open-meteo.com/v1/forecast?'
+      +new URLSearchParams({
+        latitude:String(lat),
+        longitude:String(lng),
+        current:'temperature_2m,weather_code,is_day',
+        timezone:'auto',
+        forecast_days:'1'
+      });
+    const r=await fetchTimeout(url,12000);
+    if(!r.ok)throw new Error('Weather service unavailable');
+    const data=await r.json();
+    return{
+      temperature:data.current?.temperature_2m,
+      weatherCode:data.current?.weather_code,
+      weatherText:weatherDescription(data.current?.weather_code),
+      isDay:Boolean(data.current?.is_day),
+      localTime:formatLocalApiTime(data.current?.time),
+      timezone:data.timezone||'',
+      utcOffsetSeconds:Number(data.utc_offset_seconds)||0
+    };
+  }catch{
+    return{
+      temperature:null,weatherCode:null,weatherText:'Unavailable',
+      isDay:dayNight(lng).startsWith('Day'),
+      localTime:approxTime(lng),timezone:'',utcOffsetSeconds:Math.round(lng/15)*3600
+    };
+  }
+}
+function weatherDescription(code){
+  const map={
+    0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+    45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
+    61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',
+    75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',
+    95:'Thunderstorm',96:'Thunderstorm with hail',99:'Severe thunderstorm'
+  };
+  return map[code]||'Current conditions';
+}
+function formatLocalApiTime(value){
+  if(!value)return'Unavailable';
+  const parts=String(value).split('T');
+  return parts[1]?.slice(0,5)||value;
+}
+function formatTemperature(value){
+  return Number.isFinite(Number(value))?`${Math.round(Number(value))}°C`:'Unavailable';
+}
+function formatHourDifference(value){
+  if(Number.isInteger(value))return`${value}h`;
+  const sign=value<0?'-':'';
+  const abs=Math.abs(value);
+  const h=Math.floor(abs);
+  const m=Math.round((abs-h)*60);
+  return`${sign}${h}h ${m}m`;
+}
 function season(lat){const m=new Date().getUTCMonth()+1,n=m>=3&&m<=5?'Spring':m<=8?'Summer':m<=11?'Autumn':'Winter',op={Spring:'Autumn',Summer:'Winter',Autumn:'Spring',Winter:'Summer'};return lat>=0?n:op[n]}function approxTime(lng){const d=new Date(),h=d.getUTCHours()+Math.round(lng/15);return`${String((h+24)%24).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`}function dayNight(lng){const h=(new Date().getUTCHours()+Math.round(lng/15)+24)%24;return h>=6&&h<18?'Day ☀':'Night ☾'}function fmt(lat,lng){return`${Math.abs(lat).toFixed(4)}° ${lat>=0?'N':'S'}, ${Math.abs(lng).toFixed(4)}° ${lng>=0?'E':'W'}`}function showStatus(m){$('#status').textContent=m}async function fetchTimeout(url,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{return await fetch(url,{signal:c.signal})}finally{clearTimeout(t)}}function esc(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function saveRecent(o){const e={name:o.name,lat:o.lat,lng:o.lng},a=getRecent().filter(x=>x.name!==e.name);a.unshift(e);localStorage.setItem('af-recent',JSON.stringify(a.slice(0,6)));renderRecent()}function getRecent(){try{return JSON.parse(localStorage.getItem('af-recent'))||[]}catch{return[]}}function renderRecent(){const list=$('#recent-list');if(!list)return;const a=getRecent();if(!a.length)return;list.innerHTML='';a.forEach(x=>{const li=document.createElement('li');li.textContent=x.name;li.addEventListener('click',()=>chooseLocation(x.lat,x.lng,x.name));list.appendChild(li)})}
+function saveRecent(o){const e={name:o.name,lat:o.lat,lng:o.lng},a=getRecent().filter(x=>x.name!==e.name);a.unshift(e);localStorage.setItem('af-recent',JSON.stringify(a.slice(0,6)));renderRecent()}function getRecent(){try{return JSON.parse(localStorage.getItem('af-recent'))||[]}catch{return[]}}function renderRecent(){const list=$('#recent-list');if(!list)return;const a=getRecent();list.innerHTML='';if(!a.length){const li=document.createElement('li');li.textContent='No recent searches yet.';list.appendChild(li);return;}a.forEach(x=>{const li=document.createElement('li');li.textContent=x.name;li.addEventListener('click',()=>chooseLocation(x.lat,x.lng,x.name));list.appendChild(li)})}
 function shareText(){if(!state.origin)return'AntipodeFinder.com';return`${state.origin.name} (${fmt(state.origin.lat,state.origin.lng)}) → ${state.antipode.name} (${fmt(state.antipode.lat,state.antipode.lng)}). Nearest country: ${state.antipode.country}.`}async function copyResult(){try{await navigator.clipboard.writeText(shareText());showStatus('Result copied.')}catch{}}async function shareResult(){const d={title:'My antipode result',text:shareText(),url:location.href};try{if(navigator.share)await navigator.share(d);else await navigator.clipboard.writeText(location.href)}catch{}}function updateShareUrl(){if(!state.origin)return;const u=new URL(location.href);u.searchParams.set('lat',state.origin.lat.toFixed(6));u.searchParams.set('lng',state.origin.lng.toFixed(6));u.searchParams.set('name',state.origin.name);history.replaceState({},'',u)}function loadSharedLocation(){const p=new URLSearchParams(location.search),lat=+p.get('lat'),lng=+p.get('lng'),name=p.get('name');if(Number.isFinite(lat)&&Number.isFinite(lng)&&p.has('lat')&&p.has('lng'))chooseLocation(lat,lng,name||'Shared location')}

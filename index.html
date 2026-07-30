@@ -44,8 +44,17 @@
       <a class="side-link" href="#tectonic">◇ Tectonic Plates</a>
       <a class="side-link" href="#facts">▥ Earth Statistics</a>
     </section>
-    <section class="premium-card"><span>♛</span><h3>Go Premium</h3><p>Unlock more tools, saved places and an ad-free experience.</p><button type="button">Upgrade now</button></section>
-    <footer class="sidebar-footer"><div>𝕏 &nbsp; f &nbsp; ◎ &nbsp; ▶</div><p>Privacy · Terms · Contact</p><small>© <span id="year"></span> AntipodeFinder</small></footer>
+    <section class="discover-card">
+      <p class="sidebar-title">DISCOVER MORE</p>
+      <p>Explore a random place, famous locations, and geography facts.</p>
+      <button id="discover-random-btn" type="button">🎲 Random location</button>
+      <button id="discover-famous-btn" type="button">🏛 Famous places</button>
+    </section>
+    <footer class="sidebar-footer">
+      <strong>AntipodeFinder</strong>
+      <p><a href="#about">About</a> · <a href="#how">How it works</a> · Privacy · Terms · Contact</p>
+      <small>© <span id="year"></span> AntipodeFinder.com<br>Map data © OpenStreetMap contributors</small>
+    </footer>
   </aside>
 
   <section class="main-column">
@@ -67,22 +76,50 @@
       </div>
 
       <div id="metrics" class="metric-strip">
-        <article><span>✈</span><small>Great-circle distance</small><strong id="metric-distance">—</strong><em>Through the Earth</em></article>
-        <article><span>◷</span><small>Time difference</small><strong id="metric-time">—</strong><em>Approximate</em></article>
-        <article><span>☀</span><small>Day & night</small><strong id="metric-daynight">—</strong><em>At both locations</em></article>
-        <article><span>♨</span><small>Temperature</small><strong id="metric-temperature">—</strong><em>Weather preview</em></article>
-        <article><span>≋</span><small>Ocean depth</small><strong id="metric-depth">—</strong><em>Estimated</em></article>
+        <article><span>↕</span><small>Through Earth</small><strong id="metric-through-earth">12,742 km</strong><em>Earth diameter</em></article>
+        <article><span>⌒</span><small>Surface distance</small><strong id="metric-surface-distance">20,015 km</strong><em>Half Earth circumference</em></article>
+        <article><span>◷</span><small>Local time difference</small><strong id="metric-time">—</strong><em>Real time zones</em></article>
+        <article><span>☀</span><small>Day & night</small><strong id="metric-daynight">—</strong><em>Current conditions</em></article>
+        <article><span>♨</span><small>Current temperature</small><strong id="metric-temperature">—</strong><em>Open-Meteo</em></article>
+        <article><span>▲</span><small>Distance to land</small><strong id="metric-land-distance">—</strong><em>Nearest coastline</em></article>
       </div>
     </section>
 
-    <section class="explore-more" id="how"><div class="section-row"><h2>Explore more</h2><a href="#tools">View all tools →</a></div><div class="tool-grid"><article id="live-earth"><span>🌍</span><h3>Live Earth</h3><p>See weather, clouds, earthquakes, volcanoes and more.</p></article><article id="compare"><span>🧭</span><h3>Compare Locations</h3><p>Compare time, distance, weather and population.</p></article><article><span>🎲</span><h3>Random Explorer</h3><p>Discover random places and their antipodes.</p></article><article id="travel"><span>✈️</span><h3>Travel Planner</h3><p>Plan a journey to the antipode with distance and tips.</p></article><article id="famous"><span>🏛️</span><h3>Famous Places</h3><p>See antipodes of landmarks and historic places.</p></article><article id="ocean"><span>🌊</span><h3>Ocean Explorer</h3><p>Explore oceans, depths, currents and marine information.</p></article></div></section>
+    <section class="explore-more" id="how">
+      <div class="section-row"><h2>Explore more</h2><span class="section-note">Working tools and planned additions</span></div>
+      <div class="tool-grid">
+        <button class="tool-card coming-soon" type="button" data-coming-soon="Live Earth"><span>🌍</span><b>Coming soon</b><h3>Live Earth</h3><p>Weather, clouds, earthquakes and volcanoes.</p></button>
+        <button class="tool-card coming-soon" type="button" data-coming-soon="Compare Locations"><span>🧭</span><b>Coming soon</b><h3>Compare Locations</h3><p>Compare two chosen places side by side.</p></button>
+        <button id="random-card-btn" class="tool-card available" type="button"><span>🎲</span><b>Available</b><h3>Random Explorer</h3><p>Discover a random location and its antipode.</p></button>
+        <button class="tool-card coming-soon" type="button" data-coming-soon="Travel Planner"><span>✈️</span><b>Coming soon</b><h3>Travel Planner</h3><p>Routes, flights and practical travel information.</p></button>
+        <button id="famous-card-btn" class="tool-card available" type="button"><span>🏛️</span><b>Available</b><h3>Famous Places</h3><p>Explore antipodes of famous landmarks.</p></button>
+        <button class="tool-card coming-soon" type="button" data-coming-soon="Ocean Explorer"><span>🌊</span><b>Coming soon</b><h3>Ocean Explorer</h3><p>Bathymetry, currents and marine information.</p></button>
+      </div>
+    </section>
 
     <section id="about" class="about-section"><p class="eyebrow">ABOUT ANTIPODEFINDER</p><div><h2>The world’s most complete antipode explorer.</h2><p>AntipodeFinder combines accurate coordinate calculations, coastline analysis and an interactive 3D globe to help anyone discover the exact opposite point of any place on Earth.</p></div></section>
   </section>
 
   <aside class="sidebar right-sidebar">
-    <section class="sidebar-panel"><p class="sidebar-title">POWERFUL FEATURES</p><article class="feature-card"><span>◎</span><div><h3>Exact antipode</h3><p>Find the exact opposite point on Earth.</p></div></article><article class="feature-card"><span>⚑</span><div><h3>Nearest country & place</h3><p>Discover the closest country and populated place.</p></div></article><article class="feature-card"><span>▲</span><div><h3>Distance to land</h3><p>See how far the antipode is from the nearest coastline.</p></div></article><article class="feature-card"><span>◉</span><div><h3>Interactive 3D globe</h3><p>Visualize both locations on a beautiful globe.</p></div></article><article class="feature-card"><span>☀</span><div><h3>Time & weather</h3><p>Compare time, weather and seasons.</p></div></article><article class="feature-card"><span>⌘</span><div><h3>Share & save</h3><p>Share results and save favorite locations.</p></div></article></section>
-    <section id="recent" class="sidebar-panel recent-panel"><div class="section-row"><h2>Recently searched</h2><button id="clear-recent" type="button">Clear</button></div><ul id="recent-list"><li>Rabat, Morocco</li><li>New York, USA</li><li>Tokyo, Japan</li><li>Sydney, Australia</li><li>Paris, France</li></ul></section>
+    <section class="sidebar-panel">
+      <p class="sidebar-title">POPULAR SEARCHES</p>
+      <div id="popular-searches" class="popular-searches">
+        <button type="button" data-place="Rabat, Morocco">Rabat, Morocco</button>
+        <button type="button" data-place="New York, USA">New York, USA</button>
+        <button type="button" data-place="Tokyo, Japan">Tokyo, Japan</button>
+        <button type="button" data-place="Sydney, Australia">Sydney, Australia</button>
+        <button type="button" data-place="Paris, France">Paris, France</button>
+        <button type="button" data-place="Mount Everest">Mount Everest</button>
+      </div>
+    </section>
+    <section class="sidebar-panel">
+      <p class="sidebar-title">WORKING FEATURES</p>
+      <article class="feature-card"><span>◎</span><div><h3>Exact antipode</h3><p>Calculates the opposite coordinates.</p></div></article>
+      <article class="feature-card"><span>⚑</span><div><h3>Nearest country</h3><p>Uses country and coastline geometry.</p></div></article>
+      <article class="feature-card"><span>▲</span><div><h3>Distance to land</h3><p>Estimates the nearest coastline distance.</p></div></article>
+      <article class="feature-card"><span>☀</span><div><h3>Current weather & time</h3><p>Loads current values from Open-Meteo.</p></div></article>
+    </section>
+    <section id="recent" class="sidebar-panel recent-panel"><div class="section-row"><h2>Recently searched</h2><button id="clear-recent" type="button">Clear</button></div><ul id="recent-list"><li>No recent searches yet.</li></ul></section>
   </aside>
 </main>
 

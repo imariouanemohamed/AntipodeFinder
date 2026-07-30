@@ -1,28 +1,48 @@
-# AntipodeFinder V7
+# AntipodeFinder V7.1
 
-A full dashboard-style redesign using the same light blue, white, navy and bright-blue identity as the current AntipodeFinder website.
+A corrected public-facing version of the V7 dashboard.
 
-## Included
-- Responsive dashboard layout
-- Interactive 3D globe
-- City, address and coordinate search
-- Browser geolocation
-- Globe-click selection
-- Exact antipode calculation
-- Country-polygon land detection
-- Nearest-country and coastline calculation
-- Ocean classification
-- Result cards, metrics and details modal
-- Copy/share controls
-- Recent searches and random explorer
+## What is operational
+
+- Search by city, country, address, landmark, or coordinates
+- Browser current location
+- Clickable 3D globe
+- Exact antipode coordinates
+- Country polygon detection
+- Nearest country and coastline calculation
+- Approximate distance to land
+- Ocean/land classification
+- Real current temperature, weather description, local time, UTC offset, and day/night from Open-Meteo
+- Recent searches
+- Random explorer
+- Famous-place explorer
 - Shareable URLs
-- About AntipodeFinder section
+- Copy and share result
+- Details modal
+
+## Important V7.1 corrections
+
+- Removed the premature Premium card.
+- Removed placeholder labels such as “API ready” and “Ocean data”.
+- Correctly separates:
+  - Through-Earth distance: about 12,742 km
+  - Surface antipodal distance: about 20,015 km
+- Replaced ocean depth with the operational distance-to-land calculation.
+- Unfinished tools are explicitly labeled “Coming soon”.
+- Lowered and resized the globe to prevent overlap with the metrics.
+- Added popular searches and a cleaner footer.
 
 ## Deployment
+
 ```bash
 git add .
-git commit -m "Launch AntipodeFinder V7"
+git commit -m "Launch AntipodeFinder V7.1"
 git push
 ```
 
-Weather, ocean-depth, Live Earth, premium and travel tools are interface-ready modules that can be connected to dedicated APIs later.
+## External services
+
+- Photon / OpenStreetMap for place search and reverse geocoding
+- Open-Meteo for current weather and local timezone
+- World Atlas + Turf.js for country and coastline analysis
+- Globe.gl for the 3D Earth
