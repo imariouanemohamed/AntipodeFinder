@@ -9,16 +9,61 @@ const searchInput = $("#place-search");
 let currentResult = { origin: null, antipode: null };
 let activeLookup = 0;
 let suggestionTimer;
+let geographicEnginePromise;
 
-const CONTINENTS = {
-  MA: "Africa", NZ: "Oceania", AU: "Oceania", US: "North America",
-  CA: "North America", MX: "North America", BR: "South America",
-  AR: "South America", CL: "South America", CN: "Asia", JP: "Asia",
-  IN: "Asia", RU: "Europe / Asia", ES: "Europe", FR: "Europe",
-  GB: "Europe", DE: "Europe", IT: "Europe", ZA: "Africa",
-  EG: "Africa", DZ: "Africa", TN: "Africa", PT: "Europe",
-  ID: "Asia", PH: "Asia", TR: "Europe / Asia"
+const COUNTRY_DATA_URL =
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
+
+const CONTINENT_BY_CODE = {
+  MA: "Africa", DZ: "Africa", TN: "Africa", EG: "Africa", ZA: "Africa",
+  NG: "Africa", KE: "Africa", ET: "Africa", GH: "Africa", SN: "Africa",
+  NZ: "Oceania", AU: "Oceania", FJ: "Oceania", PG: "Oceania",
+  US: "North America", CA: "North America", MX: "North America",
+  BR: "South America", AR: "South America", CL: "South America",
+  PE: "South America", CO: "South America",
+  CN: "Asia", JP: "Asia", IN: "Asia", ID: "Asia", PH: "Asia",
+  KR: "Asia", SA: "Asia", AE: "Asia", TH: "Asia", VN: "Asia",
+  ES: "Europe", FR: "Europe", GB: "Europe", DE: "Europe",
+  IT: "Europe", PT: "Europe", NL: "Europe", BE: "Europe",
+  TR: "Europe / Asia", RU: "Europe / Asia"
 };
+
+const OCEANIA_COUNTRIES = new Set([
+  "Australia", "New Zealand", "Fiji", "Papua New Guinea", "Solomon Islands",
+  "Vanuatu", "Samoa", "Tonga", "Kiribati", "Micronesia", "Palau",
+  "Marshall Islands", "Nauru", "Tuvalu", "New Caledonia"
+]);
+
+const AFRICA_COUNTRIES = new Set([
+  "Morocco", "Algeria", "Tunisia", "Libya", "Egypt", "South Africa",
+  "Namibia", "Botswana", "Zimbabwe", "Mozambique", "Madagascar",
+  "Kenya", "Tanzania", "Ethiopia", "Somalia", "Sudan", "South Sudan",
+  "Nigeria", "Ghana", "Senegal", "Mali", "Mauritania", "Niger",
+  "Chad", "Cameroon", "Angola", "Zambia", "Uganda", "Rwanda",
+  "Burundi", "Gabon", "Congo", "Democratic Republic of the Congo"
+]);
+
+const SOUTH_AMERICA_COUNTRIES = new Set([
+  "Brazil", "Argentina", "Chile", "Peru", "Bolivia", "Paraguay",
+  "Uruguay", "Colombia", "Venezuela", "Ecuador", "Guyana", "Suriname"
+]);
+
+const NORTH_AMERICA_COUNTRIES = new Set([
+  "United States of America", "United States", "Canada", "Mexico",
+  "Greenland", "Cuba", "Haiti", "Dominican Republic", "Jamaica",
+  "Guatemala", "Belize", "Honduras", "El Salvador", "Nicaragua",
+  "Costa Rica", "Panama", "The Bahamas"
+]);
+
+const EUROPE_COUNTRIES = new Set([
+  "France", "Spain", "Portugal", "Germany", "Italy", "United Kingdom",
+  "Ireland", "Belgium", "Netherlands", "Luxembourg", "Switzerland",
+  "Austria", "Poland", "Czechia", "Slovakia", "Hungary", "Romania",
+  "Bulgaria", "Greece", "Norway", "Sweden", "Finland", "Denmark",
+  "Iceland", "Ukraine", "Belarus", "Moldova", "Croatia", "Serbia",
+  "Bosnia and Herzegovina", "Slovenia", "Albania", "North Macedonia",
+  "Montenegro", "Estonia", "Latvia", "Lithuania"
+]);
 
 const globe = Globe()(globeElement)
   .backgroundColor("rgba(0,0,0,0)")
@@ -49,8 +94,266 @@ globe.pointOfView({ lat: 20, lng: -20, altitude: 1.9 }, 0);
 function resizeGlobe() {
   globe.width(globeElement.clientWidth).height(globeElement.clientHeight);
 }
+
 window.addEventListener("resize", resizeGlobe);
 resizeGlobe();
+
+/* -------------------------------------------------------------------------- */
+/* V6 geographic engine                                                       */
+/* -------------------------------------------------------------------------- */
+
+async function loadGeographicEngine() {
+  if (geographicEnginePromise) return geographicEnginePromise;
+
+  geographicEnginePromise = (async () => {
+    if (!window.topojson || !window.turf) {
+      throw new Error("Geographic libraries did not load.");
+    }
+
+    const response = await fetchWithTimeout(COUNTRY_DATA_URL, {}, 15000);
+    if (!response.ok) throw new Error("Country coastline data is unavailable.");
+
+    const topology = await response.json();
+    const collection = window.topojson.feature(
+      topology,
+      topology.objects.countries
+    );
+
+    const countries = collection.features
+      .filter((feature) => feature?.geometry)
+      .map((feature) => {
+        const name =
+          feature.properties?.name ||
+          feature.properties?.NAME ||
+          feature.properties?.admin ||
+          "Unknown country";
+
+        return {
+          feature,
+          name,
+          continent: continentFromCountry(name),
+          lines: geometryToLines(feature),
+          center: safeCentroid(feature)
+        };
+      });
+
+    return { countries };
+  })();
+
+  return geographicEnginePromise;
+}
+
+function geometryToLines(feature) {
+  try {
+    const converted = turf.polygonToLine(feature);
+    const lines = [];
+
+    turf.flattenEach(converted, (line) => {
+      if (line?.geometry?.coordinates?.length) lines.push(line);
+    });
+
+    return lines;
+  } catch {
+    return [];
+  }
+}
+
+function safeCentroid(feature) {
+  try {
+    return turf.centroid(feature);
+  } catch {
+    return null;
+  }
+}
+
+function findContainingCountry(point, countries) {
+  for (const country of countries) {
+    try {
+      if (turf.booleanPointInPolygon(point, country.feature)) return country;
+    } catch {
+      // Ignore invalid small geometries.
+    }
+  }
+  return null;
+}
+
+function findNearestCountryAndCoast(point, countries) {
+  let best = null;
+
+  for (const country of countries) {
+    for (const line of country.lines) {
+      try {
+        const nearest = turf.nearestPointOnLine(line, point, { units: "kilometers" });
+        const distance =
+          Number(nearest.properties?.dist) ||
+          turf.distance(point, nearest, { units: "kilometers" });
+
+        if (!best || distance < best.distanceKm) {
+          best = {
+            country,
+            coastPoint: nearest,
+            distanceKm: distance
+          };
+        }
+      } catch {
+        // Continue with remaining coastline segments.
+      }
+    }
+  }
+
+  return best;
+}
+
+async function analyseAntipode(lat, lng, lookupId) {
+  const engine = await loadGeographicEngine();
+  if (lookupId !== activeLookup) return null;
+
+  const point = turf.point([lng, lat]);
+  const containingCountry = findContainingCountry(point, engine.countries);
+
+  if (containingCountry) {
+    const exactPlace = await reverseGeocode(lat, lng);
+
+    return {
+      exactOnLand: true,
+      locationType: "Land",
+      oceanName: "",
+      country: containingCountry.name,
+      continent: containingCountry.continent,
+      distanceKm: 0,
+      coastCoordinates: { lat, lng },
+      place:
+        exactPlace?.metadata?.city ||
+        exactPlace?.name ||
+        `A location in ${containingCountry.name}`,
+      region:
+        exactPlace?.metadata?.region ||
+        containingCountry.name,
+      detail:
+        `The exact antipode is on land in ${containingCountry.name}.`
+    };
+  }
+
+  const nearest = findNearestCountryAndCoast(point, engine.countries);
+  if (!nearest) throw new Error("Nearest coastline could not be calculated.");
+
+  const coastLng = nearest.coastPoint.geometry.coordinates[0];
+  const coastLat = nearest.coastPoint.geometry.coordinates[1];
+  const nearbyPlace = await findNearbyNamedPlace(
+    coastLat,
+    coastLng,
+    nearest.country
+  );
+
+  return {
+    exactOnLand: false,
+    locationType: classifyOcean(lat, lng),
+    oceanName: classifyOcean(lat, lng),
+    country: nearest.country.name,
+    continent: nearest.country.continent,
+    distanceKm: nearest.distanceKm,
+    coastCoordinates: { lat: coastLat, lng: coastLng },
+    place:
+      nearbyPlace?.metadata?.city ||
+      nearbyPlace?.name ||
+      `Nearest coast of ${nearest.country.name}`,
+    region:
+      nearbyPlace?.metadata?.region ||
+      `Coast of ${nearest.country.name}`,
+    detail:
+      `The exact antipode lies in ${classifyOcean(lat, lng)}. ` +
+      `The nearest coastline belongs to ${nearest.country.name}.`
+  };
+}
+
+async function findNearbyNamedPlace(coastLat, coastLng, country) {
+  const direct = await reverseGeocode(coastLat, coastLng);
+  if (hasUsefulPlaceName(direct)) return direct;
+
+  if (!country.center) return direct;
+
+  try {
+    const coastPoint = turf.point([coastLng, coastLat]);
+    const centerPoint = country.center;
+
+    for (const distanceKm of [8, 20, 45]) {
+      const bearing = turf.bearing(coastPoint, centerPoint);
+      const inland = turf.destination(
+        coastPoint,
+        distanceKm,
+        bearing,
+        { units: "kilometers" }
+      );
+
+      if (!turf.booleanPointInPolygon(inland, country.feature)) continue;
+
+      const [lng, lat] = inland.geometry.coordinates;
+      const place = await reverseGeocode(lat, lng);
+      if (hasUsefulPlaceName(place)) return place;
+    }
+  } catch {
+    // The exact nearest country and distance still remain available.
+  }
+
+  return direct;
+}
+
+function hasUsefulPlaceName(place) {
+  if (!place) return false;
+  const city = place.metadata?.city || "";
+  return ![
+    "", "Place not identified", "Country not identified",
+    "Region not identified"
+  ].includes(city);
+}
+
+function classifyOcean(lat, lng) {
+  if (lat <= -60) return "Southern Ocean";
+  if (lat >= 66) return "Arctic Ocean";
+
+  const normalizedLng = normalizeLongitude(lng);
+
+  if (lat >= 30 && normalizedLng >= -6 && normalizedLng <= 43) {
+    return "Mediterranean region";
+  }
+
+  if (
+    normalizedLng >= 20 &&
+    normalizedLng <= 120 &&
+    lat < 30 &&
+    lat > -60
+  ) {
+    return lat >= 0 ? "North Indian Ocean" : "South Indian Ocean";
+  }
+
+  if (
+    normalizedLng >= -70 &&
+    normalizedLng <= 20 &&
+    lat > -60
+  ) {
+    return lat >= 0 ? "North Atlantic Ocean" : "South Atlantic Ocean";
+  }
+
+  return lat >= 0 ? "North Pacific Ocean" : "South Pacific Ocean";
+}
+
+function continentFromCountry(name) {
+  if (OCEANIA_COUNTRIES.has(name)) return "Oceania";
+  if (AFRICA_COUNTRIES.has(name)) return "Africa";
+  if (SOUTH_AMERICA_COUNTRIES.has(name)) return "South America";
+  if (NORTH_AMERICA_COUNTRIES.has(name)) return "North America";
+  if (EUROPE_COUNTRIES.has(name)) return "Europe";
+
+  if (name === "Russia" || name === "Turkey" || name === "Kazakhstan") {
+    return "Europe / Asia";
+  }
+
+  return "Asia";
+}
+
+/* -------------------------------------------------------------------------- */
+/* Search and result rendering                                                */
+/* -------------------------------------------------------------------------- */
 
 function calculateAntipode(lat, lng) {
   return { lat: -lat, lng: lng >= 0 ? lng - 180 : lng + 180 };
@@ -84,21 +387,22 @@ async function chooseLocation(lat, lng, name = "Selected point", detail = "", me
     },
     antipode: {
       ...antipode,
-      name: "Opposite point",
-      detail: "Searching for geographic context.",
+      name: "Analysing location",
+      detail: "Loading coastline data and calculating the nearest land…",
       metadata: {
-        city: "Searching…",
-        region: "Searching…",
-        country: "Searching…",
+        city: "Calculating…",
+        region: "Calculating…",
+        country: "Calculating…",
         countryCode: "",
-        continent: "Searching…"
+        continent: "Calculating…"
       },
       nearest: {
-        place: "Searching…",
-        country: "Searching…",
+        place: "Calculating…",
+        country: "Calculating…",
         distanceKm: null,
         exactOnLand: false
-      }
+      },
+      locationType: "Calculating…"
     }
   };
 
@@ -109,70 +413,70 @@ async function chooseLocation(lat, lng, name = "Selected point", detail = "", me
   ]).pointColor("color");
 
   globe.arcsData([{
-    startLat: latitude, startLng: longitude,
-    endLat: antipode.lat, endLng: antipode.lng
+    startLat: latitude,
+    startLng: longitude,
+    endLat: antipode.lat,
+    endLng: antipode.lng
   }]);
 
   globe.pointOfView({ lat: latitude, lng: longitude, altitude: 1.65 }, 1100);
 
   renderResult();
   resultSection.hidden = false;
+  showStatus("Calculating the nearest country, coastline, and populated place…");
 
-  const exactPlace = await reverseGeocode(antipode.lat, antipode.lng);
-  if (lookupId !== activeLookup) return;
+  try {
+    const analysis = await analyseAntipode(antipode.lat, antipode.lng, lookupId);
+    if (!analysis || lookupId !== activeLookup) return;
 
-  if (exactPlace && exactPlace.metadata.country !== "Country not identified") {
-    currentResult.antipode.name = exactPlace.name;
-    currentResult.antipode.detail = exactPlace.detail || "The exact antipode is on or very near land.";
-    currentResult.antipode.metadata = exactPlace.metadata;
-    currentResult.antipode.nearest = {
-      place: exactPlace.metadata.city || exactPlace.name,
-      country: exactPlace.metadata.country,
-      distanceKm: 0,
-      exactOnLand: true
-    };
-    renderResult();
-    updateShareUrl();
-    return;
-  }
-
-  currentResult.antipode.name = "Open ocean";
-  currentResult.antipode.detail = "The exact antipode is in open ocean. Searching outward for nearby land…";
-  renderResult();
-
-  const nearest = await findNearestLandContext(antipode.lat, antipode.lng, lookupId);
-  if (lookupId !== activeLookup) return;
-
-  if (nearest) {
-    currentResult.antipode.metadata = nearest.place.metadata;
-    currentResult.antipode.nearest = {
-      place: nearest.place.metadata.city || nearest.place.name,
-      country: nearest.place.metadata.country,
-      distanceKm: nearest.distanceKm,
-      exactOnLand: false
-    };
-    currentResult.antipode.detail =
-      `The exact antipode is in open ocean. The nearest identified country is ${nearest.place.metadata.country}.`;
-  } else {
+    currentResult.antipode.name =
+      analysis.exactOnLand ? analysis.place : analysis.locationType;
+    currentResult.antipode.detail = analysis.detail;
+    currentResult.antipode.locationType = analysis.locationType;
     currentResult.antipode.metadata = {
-      city: "Open ocean",
-      region: "Remote marine area",
-      country: "No nearby country identified",
+      city: analysis.place,
+      region: analysis.region,
+      country: analysis.country,
       countryCode: "",
-      continent: "Not identified"
+      continent: analysis.continent
     };
     currentResult.antipode.nearest = {
-      place: "Not identified",
-      country: "Not identified",
+      place: analysis.place,
+      country: analysis.country,
+      distanceKm: analysis.distanceKm,
+      exactOnLand: analysis.exactOnLand
+    };
+
+    showStatus("");
+  } catch (error) {
+    if (lookupId !== activeLookup) return;
+
+    console.error(error);
+    currentResult.antipode.name = classifyOcean(antipode.lat, antipode.lng);
+    currentResult.antipode.detail =
+      "The exact antipode is in open ocean. The geographic data service could not finish the nearest-land calculation.";
+    currentResult.antipode.locationType = classifyOcean(antipode.lat, antipode.lng);
+    currentResult.antipode.metadata = {
+      city: "Unavailable",
+      region: "Unavailable",
+      country: "Unavailable",
+      countryCode: "",
+      continent: "Unavailable"
+    };
+    currentResult.antipode.nearest = {
+      place: "Unavailable",
+      country: "Unavailable",
       distanceKm: null,
       exactOnLand: false
     };
-    currentResult.antipode.detail =
-      "The exact antipode is in a remote ocean area and nearby land could not be identified automatically.";
-  }
 
-  renderResult();
-  updateShareUrl();
+    showStatus("The result loaded, but nearest-land data is temporarily unavailable.");
+  } finally {
+    if (lookupId === activeLookup) {
+      renderResult();
+      updateShareUrl();
+    }
+  }
 }
 
 function renderResult() {
@@ -183,13 +487,13 @@ function renderResult() {
   $("#floating-origin-coords").textContent = formatCoordinates(origin.lat, origin.lng);
   $("#floating-origin-country").textContent = origin.metadata.country;
 
-  $("#floating-antipode-name").textContent =
-    antipode.nearest?.exactOnLand ? antipode.metadata.city : antipode.name;
+  $("#floating-antipode-name").textContent = antipode.name;
   $("#floating-antipode-coords").textContent = formatCoordinates(antipode.lat, antipode.lng);
   $("#floating-antipode-country").textContent =
-    antipode.nearest?.country && antipode.nearest.country !== "Searching…"
+    antipode.nearest?.country &&
+    !["Calculating…", "Unavailable"].includes(antipode.nearest.country)
       ? `Nearest: ${antipode.nearest.country}`
-      : "Finding nearest country…";
+      : antipode.nearest?.country || "Calculating…";
 
   $("#result-origin-title").textContent = origin.name;
   $("#result-antipode-title").textContent = antipode.name;
@@ -205,17 +509,25 @@ function renderResult() {
   $("#antipode-detail").textContent = antipode.detail;
   $("#antipode-coords").textContent = formatCoordinates(antipode.lat, antipode.lng);
   $("#antipode-location-type").textContent =
-    antipode.nearest?.exactOnLand ? "Land" : "Open ocean";
-  $("#antipode-country").textContent = antipode.nearest?.country || antipode.metadata.country;
-  $("#antipode-nearest-place").textContent = antipode.nearest?.place || "Searching…";
+    antipode.locationType ||
+    (antipode.nearest?.exactOnLand ? "Land" : "Open ocean");
+  $("#antipode-country").textContent =
+    antipode.nearest?.country || antipode.metadata.country;
+  $("#antipode-nearest-place").textContent =
+    antipode.nearest?.place || "Calculating…";
+
   $("#antipode-nearest-distance").textContent =
     antipode.nearest?.distanceKm === 0
       ? "At the exact point"
       : Number.isFinite(antipode.nearest?.distanceKm)
-        ? `Approximately ${Math.round(antipode.nearest.distanceKm)} km`
-        : "Searching…";
+        ? `Approximately ${Math.round(antipode.nearest.distanceKm)} km to land`
+        : antipode.nearest?.country === "Unavailable"
+          ? "Unavailable"
+          : "Calculating…";
+
   $("#antipode-region").textContent = antipode.metadata.region;
-  $("#antipode-continent").textContent = antipode.metadata.continent || "Not identified";
+  $("#antipode-continent").textContent =
+    antipode.metadata.continent || "Not identified";
 
   const nearestCountry = antipode.nearest?.country;
   const nearestPlace = antipode.nearest?.place;
@@ -224,12 +536,22 @@ function renderResult() {
   if (antipode.nearest?.exactOnLand) {
     $("#result-summary").textContent =
       `The exact antipode of ${origin.name} is on land near ${nearestPlace}, ${nearestCountry}.`;
-  } else if (nearestCountry && nearestCountry !== "Searching…" && Number.isFinite(distance)) {
+  } else if (
+    nearestCountry &&
+    !["Calculating…", "Unavailable"].includes(nearestCountry) &&
+    Number.isFinite(distance)
+  ) {
     $("#result-summary").textContent =
-      `The exact antipode of ${origin.name} lies in open ocean. The nearest identified country is ${nearestCountry}, with ${nearestPlace} approximately ${Math.round(distance)} km from the antipode coordinates.`;
+      `The exact antipode of ${origin.name} lies in ${antipode.locationType}. ` +
+      `The nearest country is ${nearestCountry}. Its coastline is approximately ` +
+      `${Math.round(distance)} km from the exact antipode, and the nearest identified place is ${nearestPlace}.`;
+  } else if (nearestCountry === "Unavailable") {
+    $("#result-summary").textContent =
+      `The exact antipode of ${origin.name} lies in ${antipode.locationType}. ` +
+      `Nearest-land information is temporarily unavailable.`;
   } else {
     $("#result-summary").textContent =
-      `The exact antipode of ${origin.name} is being analysed for the nearest country and populated place.`;
+      `The exact antipode of ${origin.name} is being analysed using country and coastline data.`;
   }
 }
 
@@ -245,15 +567,29 @@ function getPlaceName(properties = {}) {
 }
 
 function getPlaceDetail(properties = {}) {
-  return unique([properties.city, properties.state, properties.country]).join(", ");
+  return unique([
+    properties.city,
+    properties.state,
+    properties.country
+  ]).join(", ");
 }
 
 function getPlaceMetadata(properties = {}) {
-  const countryCode = String(properties.countrycode || properties.country_code || "").toUpperCase();
+  const countryCode = String(
+    properties.countrycode || properties.country_code || ""
+  ).toUpperCase();
+
   return {
-    city: properties.city || properties.name || properties.county ||
-      properties.district || "Place not identified",
-    region: properties.state || properties.county || properties.district ||
+    city:
+      properties.city ||
+      properties.name ||
+      properties.county ||
+      properties.district ||
+      "Place not identified",
+    region:
+      properties.state ||
+      properties.county ||
+      properties.district ||
       "Region not identified",
     country: properties.country || "Country not identified",
     countryCode,
@@ -262,11 +598,14 @@ function getPlaceMetadata(properties = {}) {
 }
 
 function continentFromCode(code = "") {
-  return CONTINENTS[String(code).toUpperCase()] || "Not identified";
+  return CONTINENT_BY_CODE[String(code).toUpperCase()] || "Not identified";
 }
 
 function unique(values) {
-  return values.filter((value, index, array) => value && array.indexOf(value) === index);
+  return values.filter(
+    (value, index, array) =>
+      value && array.indexOf(value) === index
+  );
 }
 
 async function searchPlaces(query) {
@@ -277,6 +616,7 @@ async function searchPlaces(query) {
   if (coordinateMatch) {
     const lat = Number(coordinateMatch[1]);
     const lng = Number(coordinateMatch[2]);
+
     if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
       return [{
         geometry: { coordinates: [lng, lat] },
@@ -285,9 +625,12 @@ async function searchPlaces(query) {
     }
   }
 
-  const response = await fetch(
-    `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6`
+  const response = await fetchWithTimeout(
+    `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6`,
+    {},
+    10000
   );
+
   if (!response.ok) throw new Error("Search service unavailable");
   const data = await response.json();
   return data.features || [];
@@ -295,16 +638,19 @@ async function searchPlaces(query) {
 
 async function reverseGeocode(lat, lng) {
   try {
-    const response = await fetch(
-      `https://photon.komoot.io/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&limit=1`
+    const response = await fetchWithTimeout(
+      `https://photon.komoot.io/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&limit=1`,
+      {},
+      9000
     );
-    if (!response.ok) return null;
 
+    if (!response.ok) return null;
     const data = await response.json();
     const feature = data.features?.[0];
     if (!feature) return null;
 
     const properties = feature.properties || {};
+
     return {
       name: getPlaceName(properties),
       detail: getPlaceDetail(properties) || "Nearest named place.",
@@ -315,96 +661,23 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
-async function findNearestLandContext(lat, lng, lookupId) {
-  const radiiKm = [25, 50, 100, 150, 225, 325, 475, 700, 1000];
-  const bearings = Array.from({ length: 16 }, (_, i) => i * 22.5);
+async function fetchWithTimeout(resource, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  for (const radiusKm of radiiKm) {
-    const candidates = bearings.map((bearing) => {
-      const point = destinationPoint(lat, lng, radiusKm, bearing);
-      return { ...point, radiusKm };
+  try {
+    return await fetch(resource, {
+      ...options,
+      signal: controller.signal
     });
-
-    for (let i = 0; i < candidates.length; i += 4) {
-      if (lookupId !== activeLookup) return null;
-
-      const batch = candidates.slice(i, i + 4);
-      const results = await Promise.all(
-        batch.map(async (candidate) => ({
-          candidate,
-          place: await reverseGeocode(candidate.lat, candidate.lng)
-        }))
-      );
-
-      const valid = results
-        .filter((item) =>
-          item.place &&
-          item.place.metadata.country &&
-          item.place.metadata.country !== "Country not identified"
-        )
-        .sort((a, b) => a.candidate.radiusKm - b.candidate.radiusKm);
-
-      if (valid.length) {
-        return {
-          place: valid[0].place,
-          distanceKm: haversineKm(
-            lat, lng,
-            valid[0].candidate.lat, valid[0].candidate.lng
-          )
-        };
-      }
-
-      await sleep(120);
-    }
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return null;
 }
-
-function destinationPoint(lat, lng, distanceKm, bearingDeg) {
-  const radiusKm = 6371;
-  const angular = distanceKm / radiusKm;
-  const bearing = toRadians(bearingDeg);
-  const lat1 = toRadians(lat);
-  const lng1 = toRadians(lng);
-
-  const lat2 = Math.asin(
-    Math.sin(lat1) * Math.cos(angular) +
-    Math.cos(lat1) * Math.sin(angular) * Math.cos(bearing)
-  );
-
-  const lng2 = lng1 + Math.atan2(
-    Math.sin(bearing) * Math.sin(angular) * Math.cos(lat1),
-    Math.cos(angular) - Math.sin(lat1) * Math.sin(lat2)
-  );
-
-  return {
-    lat: toDegrees(lat2),
-    lng: normalizeLongitude(toDegrees(lng2))
-  };
-}
-
-function haversineKm(lat1, lng1, lat2, lng2) {
-  const radiusKm = 6371;
-  const dLat = toRadians(lat2 - lat1);
-  const dLng = toRadians(lng2 - lng1);
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(lat1)) *
-    Math.cos(toRadians(lat2)) *
-    Math.sin(dLng / 2) ** 2;
-
-  return 2 * radiusKm * Math.asin(Math.sqrt(a));
-}
-
-const toRadians = (degrees) => degrees * Math.PI / 180;
-const toDegrees = (radians) => radians * 180 / Math.PI;
-const normalizeLongitude = (lng) => ((lng + 540) % 360) - 180;
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function renderSuggestions(features) {
   suggestionsElement.innerHTML = "";
+
   if (!features.length) {
     suggestionsElement.hidden = true;
     return;
@@ -417,22 +690,30 @@ function renderSuggestions(features) {
 
     button.type = "button";
     button.className = "suggestion";
-    button.textContent = unique([
-      properties.name, properties.city, properties.state, properties.country
-    ]).join(", ") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    button.textContent =
+      unique([
+        properties.name,
+        properties.city,
+        properties.state,
+        properties.country
+      ]).join(", ") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
     button.addEventListener("click", async () => {
       searchInput.value = button.textContent;
       suggestionsElement.hidden = true;
 
       await chooseLocation(
-        lat, lng,
+        lat,
+        lng,
         getPlaceName(properties),
         getPlaceDetail(properties),
         getPlaceMetadata(properties)
       );
 
-      resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      resultSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
     });
 
     suggestionsElement.appendChild(button);
@@ -455,22 +736,28 @@ async function searchAndChoose(query) {
     const properties = feature.properties || {};
     const [lng, lat] = feature.geometry.coordinates;
 
-    searchInput.value = unique([
-      properties.name, properties.city, properties.state, properties.country
-    ]).join(", ") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    searchInput.value =
+      unique([
+        properties.name,
+        properties.city,
+        properties.state,
+        properties.country
+      ]).join(", ") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
     suggestionsElement.hidden = true;
-    showStatus("Finding the nearest country and populated place…");
 
     await chooseLocation(
-      lat, lng,
+      lat,
+      lng,
       getPlaceName(properties),
       getPlaceDetail(properties),
       getPlaceMetadata(properties)
     );
 
-    showStatus("");
-    resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    resultSection.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
   } catch (error) {
     showStatus(
       error.message === "No result"
@@ -513,8 +800,10 @@ async function locateUser() {
 
   navigator.geolocation.getCurrentPosition(
     async ({ coords }) => {
-      const place = await reverseGeocode(coords.latitude, coords.longitude);
-      showStatus("Finding the nearest country and populated place…");
+      const place = await reverseGeocode(
+        coords.latitude,
+        coords.longitude
+      );
 
       await chooseLocation(
         coords.latitude,
@@ -524,11 +813,20 @@ async function locateUser() {
         place?.metadata || {}
       );
 
-      showStatus("");
-      resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      resultSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
     },
-    () => showStatus("Location access was unavailable. Search for your city instead."),
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+    () =>
+      showStatus(
+        "Location access was unavailable. Search for your city instead."
+      ),
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000
+    }
   );
 }
 
@@ -537,6 +835,7 @@ $("#header-location-btn").addEventListener("click", locateUser);
 
 $("#new-search-btn").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
+
   setTimeout(() => {
     searchInput.focus();
     searchInput.select();
@@ -545,10 +844,13 @@ $("#new-search-btn").addEventListener("click", () => {
 
 $("#copy-btn").addEventListener("click", async () => {
   const text = buildShareText();
+
   try {
     await navigator.clipboard.writeText(text);
     $("#copy-btn").textContent = "Copied";
-    setTimeout(() => { $("#copy-btn").textContent = "Copy result"; }, 1500);
+    setTimeout(() => {
+      $("#copy-btn").textContent = "Copy result";
+    }, 1500);
   } catch {
     showStatus(text);
   }
@@ -568,10 +870,12 @@ $("#share-btn").addEventListener("click", async () => {
     } else {
       await navigator.clipboard.writeText(url);
       $("#share-btn").textContent = "Link copied";
-      setTimeout(() => { $("#share-btn").textContent = "Share link"; }, 1500);
+      setTimeout(() => {
+        $("#share-btn").textContent = "Share link";
+      }, 1500);
     }
   } catch {
-    // User may cancel the share dialog.
+    // The user may cancel the system share dialog.
   }
 });
 
@@ -580,10 +884,11 @@ function buildShareText() {
   if (!origin || !antipode) return "AntipodeFinder.com";
 
   const nearest = antipode.nearest || {};
+
   return `${origin.name} (${formatCoordinates(origin.lat, origin.lng)}) → ` +
     `${antipode.name} (${formatCoordinates(antipode.lat, antipode.lng)}). ` +
     `Nearest country: ${nearest.country || "not identified"}. ` +
-    `Closest place: ${nearest.place || "not identified"}.`;
+    `Closest identified place: ${nearest.place || "not identified"}.`;
 }
 
 function updateShareUrl() {
@@ -595,6 +900,7 @@ function updateShareUrl() {
   url.searchParams.set("lng", origin.lng.toFixed(6));
   url.searchParams.set("name", origin.name);
   history.replaceState({}, "", url);
+
   return url.toString();
 }
 
@@ -604,15 +910,23 @@ async function loadSharedLocation() {
   const lng = Number(params.get("lng"));
   const name = params.get("name") || "Shared location";
 
-  if (Number.isFinite(lat) && Number.isFinite(lng) &&
-      lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+  if (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  ) {
     searchInput.value = name;
     await chooseLocation(lat, lng, name);
   }
 }
 
 document.addEventListener("click", (event) => {
-  if (!event.target.closest(".search-box")) suggestionsElement.hidden = true;
+  if (!event.target.closest(".search-box")) {
+    suggestionsElement.hidden = true;
+  }
 });
 
 function showStatus(message) {
@@ -620,10 +934,25 @@ function showStatus(message) {
 }
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, (character) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
-  })[character]);
+  return String(value).replace(
+    /[&<>'"]/g,
+    (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;"
+    })[character]
+  );
 }
 
+const normalizeLongitude = (lng) => ((lng + 540) % 360) - 180;
+
 $("#year").textContent = new Date().getFullYear();
+
+/* Start downloading the coastline engine early, without blocking the page. */
+loadGeographicEngine().catch((error) => {
+  console.warn("V6 geographic engine preload failed:", error);
+});
+
 loadSharedLocation();

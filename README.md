@@ -1,37 +1,55 @@
-# AntipodeFinder V5
+# AntipodeFinder V6
 
-Bright production-style redesign with richer antipode information.
+V6 replaces the unreliable repeated ocean reverse-geocoding loop with a coastline-based geographic engine.
 
-## Included files
+## Main fix
 
-- `index.html`
-- `assets/css/styles.css`
-- `assets/js/app.js`
+V5 searched many points around an ocean antipode and waited for a geocoder to return a country. That could remain stuck on “Searching...”.
 
-## New in V5
+V6 instead:
 
-- New headline: “What’s on the other side of Earth?”
+1. Loads Natural Earth country geometry through `world-atlas`.
+2. Tests whether the exact antipode is on land.
+3. If it is over water, calculates the closest point on all country coastlines.
+4. Identifies the nearest country directly from the coastline geometry.
+5. Uses reverse geocoding only to add a nearby named place.
+6. Always exits the loading state with either a result or a clear “Unavailable” message.
+
+## V6 result fields
+
 - Exact antipode coordinates
-- Ocean/land indication
-- Estimated nearest country
-- Estimated nearest populated place
-- Approximate distance to identified nearby land/place
-- Continent field
-- Shareable URL parameters
-- Copy result and Share link buttons
-- Direct coordinate search, such as `34.02, -6.84`
-- Existing city search, suggestions, geolocation, globe click, markers, and animated arc
+- Land or ocean classification
+- Approximate ocean name
+- Nearest country
+- Closest identified populated place or coastal area
+- Approximate distance to coastline
+- Region
+- Continent
+- Shareable result URL
+- Copy and share controls
 
-## Important accuracy note
+## Accuracy note
 
-The nearest-country feature performs a progressive radial search using public reverse-geocoding results. It is useful for discovery, but the distance is approximate and may identify the nearest named feature rather than the mathematically exact coastline point.
+Country and coastline calculations use the Natural Earth 1:50m world dataset. Distances are geographic estimates suitable for an educational website, not legal, navigational, or surveying use. The closest named place depends on the public Photon/OpenStreetMap geocoder.
 
-## Installation
+## Deployment
 
-Replace the matching files in your project and test locally.
+Replace your existing project files with this folder and run:
 
 ```bash
 git add .
-git commit -m "Launch AntipodeFinder V5"
+git commit -m "Launch AntipodeFinder V6 geographic engine"
 git push
 ```
+
+## External browser resources
+
+V6 loads:
+
+- Globe.gl
+- TopoJSON Client
+- Turf.js
+- World Atlas country geometry
+- Photon geocoding
+
+Cloudflare Workers should serve the project normally because these resources are requested by the visitor's browser.
