@@ -3,160 +3,113 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Find the exact opposite point on Earth from any location with an interactive 3D globe." />
+  <meta name="description" content="Find the exact opposite point on Earth from any city, address, coordinate, or location." />
+  <meta name="theme-color" content="#07141d" />
   <title>Antipode Finder — Discover the Other Side of Earth</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/styles.css" />
   <script src="https://unpkg.com/globe.gl"></script>
 </head>
 <body>
-  <header class="site-header">
-    <a class="brand" href="#top" aria-label="Antipode Finder home">
-      <span class="brand-mark" aria-hidden="true">↯</span>
-      <span>Antipode<span>Finder</span></span>
-    </a>
-    <nav>
-      <a href="#how-it-works">How it works</a>
-      <a href="#about">About antipodes</a>
-    </nav>
-  </header>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Antipode Finder home">
+        <span class="brand-mark" aria-hidden="true">↯</span>
+        <span>Antipode<span>Finder</span></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#explore">Explore</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#about">About</a>
+      </nav>
+    </header>
 
-  <main id="top">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">THE OTHER SIDE OF THE WORLD</p>
-        <h1>What’s directly beneath your feet?</h1>
-        <p class="lead">Choose any place and instantly discover its exact opposite point on Earth.</p>
+    <main id="top">
+      <section class="hero" id="explore">
+        <div class="hero-intro">
+          <p class="eyebrow">THE OTHER SIDE OF THE WORLD</p>
+          <h1>Discover what lies directly beneath you.</h1>
+          <p class="lead">Search any city, address, or country and reveal its exact opposite point on Earth.</p>
+          <form id="search-form" class="search-box" autocomplete="off">
+            <label class="sr-only" for="place-search">Search for a city, country, or address</label>
+            <input id="place-search" type="search" placeholder="Try Rabat, Tokyo, or New York…" required />
+            <button type="submit">Find antipode</button>
+            <div id="suggestions" class="suggestions" hidden></div>
+          </form>
+          <div class="secondary-actions">
+            <button id="locate-btn" class="locate-btn" type="button"><span aria-hidden="true">◎</span>Use my current location</button>
+            <p id="status" class="status" role="status" aria-live="polite"></p>
+          </div>
+        </div>
 
-        <form id="search-form" class="search-box" autocomplete="off">
-          <label class="sr-only" for="place-search">Search for a city, country, or address</label>
-          <input id="place-search" type="search" placeholder="Try Rabat, Tokyo, or New York…" required />
-          <button type="submit">Find antipode</button>
-          <div id="suggestions" class="suggestions" hidden></div>
-        </form>
+        <div class="globe-stage">
+          <div class="globe-glow" aria-hidden="true"></div>
+          <div id="globe" aria-label="Interactive 3D globe"></div>
+          <div class="globe-hint">Drag to rotate · Scroll to zoom · Click anywhere</div>
+        </div>
+      </section>
 
-        <div class="or-row"><span></span><b>OR</b><span></span></div>
-        <button id="locate-btn" class="locate-btn" type="button">
-          <span aria-hidden="true">◎</span> Use my current location
-        </button>
-        <p id="status" class="status" role="status" aria-live="polite"></p>
-      </div>
+      <section id="result" class="result-panel" hidden>
+        <div class="result-topbar">
+          <div>
+            <p class="eyebrow">YOUR ANTIPODE</p>
+            <h2><span id="origin-name">Selected point</span><span class="title-arrow" aria-hidden="true">↔</span><span id="antipode-name">Opposite point</span></h2>
+          </div>
+          <button id="share-btn" class="share-btn" type="button">Copy result</button>
+        </div>
 
-      <div class="globe-panel">
-        <div id="globe" aria-label="Interactive 3D globe"></div>
-        <div class="globe-hint">Drag to rotate · Scroll to zoom · Click anywhere</div>
-      </div>
-    </section>
+        <div class="journey">
+          <article class="location-card origin-card">
+            <div class="location-card-head">
+              <span class="location-marker origin-marker"></span>
+              <div><span class="location-label">Starting location</span><h3 id="origin-city">Selected location</h3></div>
+            </div>
+            <p id="origin-detail" class="location-description">—</p>
+            <strong id="origin-coords" class="coordinates">—</strong>
+            <div class="location-tags"><span id="origin-region">Region not identified</span><span id="origin-country">Country not identified</span></div>
+          </article>
 
-   <section id="result" class="result-card" hidden>
-  <div class="result-heading">
-    <div>
-      <p class="eyebrow">YOUR RESULT</p>
-      <h2>
-        <span id="origin-name">Selected point</span>
-        ↔
-        <span id="antipode-name">Opposite point</span>
-      </h2>
-    </div>
+          <div class="earth-distance">
+            <span class="distance-line"></span>
+            <div class="distance-badge"><strong>12,742 km</strong><small>through Earth</small></div>
+            <span class="distance-line"></span>
+          </div>
 
-    <button id="share-btn" class="share-btn" type="button">
-      Copy result
-    </button>
+          <article class="location-card antipode-card">
+            <div class="location-card-head">
+              <span class="location-marker antipode-marker"></span>
+              <div><span class="location-label">Antipode</span><h3 id="antipode-city">Opposite point</h3></div>
+            </div>
+            <p id="antipode-detail" class="location-description">—</p>
+            <strong id="antipode-coords" class="coordinates">—</strong>
+            <div class="location-tags"><span id="antipode-region">Area not identified</span><span id="antipode-country">Country not identified</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="content-section">
+        <div class="section-heading"><p class="eyebrow">SIMPLE GEOGRAPHY</p><h2>From one coordinate to the other side of Earth.</h2></div>
+        <div class="steps">
+          <article><b>01</b><h3>Choose a point</h3><p>Search, use your device location, or click directly on the globe.</p></article>
+          <article><b>02</b><h3>Flip the coordinates</h3><p>Latitude changes sign and longitude moves exactly 180 degrees.</p></article>
+          <article><b>03</b><h3>Explore the result</h3><p>See both locations, their coordinates, and the path around Earth.</p></article>
+        </div>
+      </section>
+
+      <section id="about" class="fact-section">
+        <div><p class="eyebrow">DID YOU KNOW?</p><h2>Most land locations have an ocean antipode.</h2><p>Oceans cover most of Earth and land is unevenly distributed. That is why the exact opposite point of many cities falls in open water.</p></div>
+        <div class="formula-card"><span>Antipode formula</span><code>latitude₂ = −latitude₁</code><code>longitude₂ = longitude₁ ± 180°</code></div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand" href="#top"><span class="brand-mark">↯</span><span>Antipode<span>Finder</span></span></a>
+      <p>Explore the planet from a completely different angle.</p>
+      <small>© <span id="year"></span> AntipodeFinder.com · Map data © OpenStreetMap contributors</small>
+    </footer>
   </div>
-
-  <div class="result-grid">
-    <article>
-      <span class="dot origin-dot"></span>
-      <h3>Starting location</h3>
-
-      <strong id="origin-coords">—</strong>
-      <p id="origin-detail">—</p>
-
-      <dl class="location-meta">
-        <div>
-          <dt>City or place</dt>
-          <dd id="origin-city">—</dd>
-        </div>
-
-        <div>
-          <dt>Region</dt>
-          <dd id="origin-region">—</dd>
-        </div>
-
-        <div>
-          <dt>Country</dt>
-          <dd id="origin-country">—</dd>
-        </div>
-      </dl>
-    </article>
-
-    <div class="through-earth" aria-hidden="true">
-      12,742 km
-      <br>
-      <small>through Earth</small>
-    </div>
-
-    <article>
-      <span class="dot antipode-dot"></span>
-      <h3>Antipode</h3>
-
-      <strong id="antipode-coords">—</strong>
-      <p id="antipode-detail">—</p>
-
-      <dl class="location-meta">
-        <div>
-          <dt>Nearest named place</dt>
-          <dd id="antipode-city">—</dd>
-        </div>
-
-        <div>
-          <dt>Region</dt>
-          <dd id="antipode-region">—</dd>
-        </div>
-
-        <div>
-          <dt>Country or area</dt>
-          <dd id="antipode-country">—</dd>
-        </div>
-      </dl>
-    </article>
-  </div>
-</section>
-
-    <section id="how-it-works" class="content-section">
-      <div>
-        <p class="eyebrow">SIMPLE GEOGRAPHY</p>
-        <h2>How the calculation works</h2>
-      </div>
-      <div class="steps">
-        <article><b>01</b><h3>Choose a point</h3><p>Search, use your device location, or click directly on the globe.</p></article>
-        <article><b>02</b><h3>Flip the coordinates</h3><p>Latitude changes sign. Longitude moves exactly 180° east or west.</p></article>
-        <article><b>03</b><h3>Explore the result</h3><p>The globe connects both points with a path passing around the planet.</p></article>
-      </div>
-    </section>
-
-    <section id="about" class="fact-section">
-      <div>
-        <p class="eyebrow">DID YOU KNOW?</p>
-        <h2>Most land has an ocean antipode.</h2>
-        <p>Because oceans cover most of Earth and land is unevenly distributed, the opposite point of many cities falls in open water. Antipodal land pairs are relatively rare.</p>
-      </div>
-      <div class="formula-card">
-        <span>Antipode formula</span>
-        <code>latitude₂ = −latitude₁</code>
-        <code>longitude₂ = longitude₁ ± 180°</code>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <a class="brand" href="#top"><span class="brand-mark">↯</span><span>Antipode<span>Finder</span></span></a>
-    <p>Explore the planet from a completely different angle.</p>
-    <small>© <span id="year"></span> AntipodeFinder.com · Map data © OpenStreetMap contributors</small>
-  </footer>
-
   <script src="assets/js/app.js"></script>
 </body>
 </html>
