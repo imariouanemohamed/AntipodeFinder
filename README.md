@@ -1,4 +1,4 @@
-# AntipodeFinder V6.2
+# AntipodeFinder V6.3
 
 V6 replaces the unreliable repeated ocean reverse-geocoding loop with a coastline-based geographic engine.
 
@@ -72,3 +72,12 @@ Cloudflare Workers should serve the project normally because these resources are
 - Added secure-context detection because browser geolocation requires HTTPS.
 - Added clearer messages for denied permission, unavailable position, and timeout.
 - Changed geolocation to a faster balanced accuracy mode.
+
+
+## V6.3 globe-click location fix
+
+- Globe clicks now reverse-geocode the starting coordinates before displaying the report.
+- Starting city, region, country, and continent are populated whenever the geocoder has data.
+- Shared URLs and manually entered coordinates receive the same metadata lookup.
+- Added Niue and additional Pacific territories to Oceania classification.
+- Prevented a town name from being repeated incorrectly as the region.

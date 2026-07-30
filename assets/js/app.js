@@ -31,7 +31,9 @@ const CONTINENT_BY_CODE = {
 const OCEANIA_COUNTRIES = new Set([
   "Australia", "New Zealand", "Fiji", "Papua New Guinea", "Solomon Islands",
   "Vanuatu", "Samoa", "Tonga", "Kiribati", "Micronesia", "Palau",
-  "Marshall Islands", "Nauru", "Tuvalu", "New Caledonia"
+  "Marshall Islands", "Nauru", "Tuvalu", "New Caledonia", "Niue",
+  "Cook Islands", "French Polynesia", "American Samoa", "Guam",
+  "Northern Mariana Islands", "Wallis and Futuna"
 ]);
 
 const AFRICA_COUNTRIES = new Set([
@@ -368,8 +370,42 @@ async function chooseLocation(lat, lng, name = "Selected point", detail = "", me
     return;
   }
 
-  const antipode = calculateAntipode(latitude, longitude);
   const lookupId = ++activeLookup;
+
+  /*
+   * Globe clicks and shared coordinates do not initially contain city,
+   * region, or country metadata. Reverse-geocode the starting point first
+   * so its report is as complete as a typed search result.
+   */
+  const needsOriginLookup =
+    !metadata.country ||
+    metadata.country === "Country not identified" ||
+    name === "Selected point" ||
+    name === "Shared location" ||
+    name === "Entered coordinates";
+
+  if (needsOriginLookup) {
+    showStatus("Identifying the selected location…");
+    const identifiedOrigin = await reverseGeocode(latitude, longitude);
+
+    if (lookupId !== activeLookup) return;
+
+    if (identifiedOrigin) {
+      name =
+        identifiedOrigin.metadata?.city &&
+        identifiedOrigin.metadata.city !== "Place not identified"
+          ? identifiedOrigin.metadata.city
+          : identifiedOrigin.name || name;
+
+      detail = identifiedOrigin.detail || detail;
+      metadata = {
+        ...metadata,
+        ...identifiedOrigin.metadata
+      };
+    }
+  }
+
+  const antipode = calculateAntipode(latitude, longitude);
 
   currentResult = {
     origin: {
@@ -378,11 +414,20 @@ async function chooseLocation(lat, lng, name = "Selected point", detail = "", me
       name,
       detail: detail || "Your selected location.",
       metadata: {
-        city: metadata.city || name,
-        region: metadata.region || "Region not identified",
+        city:
+          metadata.city && metadata.city !== "Place not identified"
+            ? metadata.city
+            : name,
+        region:
+          metadata.region && metadata.region !== "Region not identified"
+            ? metadata.region
+            : metadata.country || "Region not identified",
         country: metadata.country || "Country not identified",
         countryCode: metadata.countryCode || "",
-        continent: metadata.continent || continentFromCode(metadata.countryCode)
+        continent:
+          metadata.continent && metadata.continent !== "Not identified"
+            ? metadata.continent
+            : continentFromCode(metadata.countryCode)
       }
     },
     antipode: {
@@ -579,26 +624,42 @@ function getPlaceMetadata(properties = {}) {
     properties.countrycode || properties.country_code || ""
   ).toUpperCase();
 
+  const city =
+    properties.city ||
+    properties.town ||
+    properties.village ||
+    properties.hamlet ||
+    properties.name ||
+    properties.county ||
+    properties.district ||
+    "Place not identified";
+
+  let region =
+    properties.state ||
+    properties.region ||
+    properties.province ||
+    properties.county ||
+    properties.district ||
+    "";
+
+  if (!region || region === city) {
+    region = properties.country || "Region not identified";
+  }
+
   return {
-    city:
-      properties.city ||
-      properties.name ||
-      properties.county ||
-      properties.district ||
-      "Place not identified",
-    region:
-      properties.state ||
-      properties.county ||
-      properties.district ||
-      "Region not identified",
+    city,
+    region,
     country: properties.country || "Country not identified",
     countryCode,
-    continent: continentFromCode(countryCode)
+    continent: continentFromCode(countryCode, properties.country || "")
   };
 }
 
-function continentFromCode(code = "") {
-  return CONTINENT_BY_CODE[String(code).toUpperCase()] || "Not identified";
+function continentFromCode(code = "", countryName = "") {
+  const byCode = CONTINENT_BY_CODE[String(code).toUpperCase()];
+  if (byCode) return byCode;
+  if (countryName) return continentFromCountry(countryName);
+  return "Not identified";
 }
 
 function unique(values) {
