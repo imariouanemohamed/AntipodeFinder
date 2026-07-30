@@ -1,4 +1,4 @@
-# AntipodeFinder V6.3
+# AntipodeFinder V6.4
 
 V6 replaces the unreliable repeated ocean reverse-geocoding loop with a coastline-based geographic engine.
 
@@ -81,3 +81,12 @@ Cloudflare Workers should serve the project normally because these resources are
 - Shared URLs and manually entered coordinates receive the same metadata lookup.
 - Added Niue and additional Pacific territories to Oceania classification.
 - Prevented a town name from being repeated incorrectly as the region.
+
+
+## V6.4 robust globe-click identification
+
+- Globe clicks no longer depend only on Photon reverse geocoding.
+- The app now checks the clicked coordinate against the country polygon dataset.
+- Country and continent are still identified when no nearby city is returned.
+- Region falls back to the country instead of remaining blank.
+- Remote deserts and sparsely mapped areas return a useful result such as “Location in Sudan”.

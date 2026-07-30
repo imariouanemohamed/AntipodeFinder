@@ -179,6 +179,82 @@ function findContainingCountry(point, countries) {
   return null;
 }
 
+async function analyseOriginLocation(lat, lng) {
+  let reversePlace = null;
+
+  try {
+    reversePlace = await reverseGeocode(lat, lng);
+  } catch {
+    reversePlace = null;
+  }
+
+  let polygonCountry = null;
+
+  try {
+    const engine = await loadGeographicEngine();
+    polygonCountry = findContainingCountry(
+      turf.point([lng, lat]),
+      engine.countries
+    );
+  } catch {
+    polygonCountry = null;
+  }
+
+  const reverseCountry = reversePlace?.metadata?.country;
+  const country =
+    reverseCountry && reverseCountry !== "Country not identified"
+      ? reverseCountry
+      : polygonCountry?.name || "Country not identified";
+
+  const city =
+    reversePlace?.metadata?.city &&
+    reversePlace.metadata.city !== "Place not identified"
+      ? reversePlace.metadata.city
+      : reversePlace?.name &&
+        !["Selected point", "Shared location", "Entered coordinates"].includes(reversePlace.name)
+        ? reversePlace.name
+        : country !== "Country not identified"
+          ? `Location in ${country}`
+          : "Selected point";
+
+  let region = reversePlace?.metadata?.region || "";
+
+  if (
+    !region ||
+    region === "Region not identified" ||
+    region === city
+  ) {
+    region =
+      country !== "Country not identified"
+        ? country
+        : "Region not identified";
+  }
+
+  const countryCode = reversePlace?.metadata?.countryCode || "";
+  const continent =
+    reversePlace?.metadata?.continent &&
+    reversePlace.metadata.continent !== "Not identified"
+      ? reversePlace.metadata.continent
+      : polygonCountry?.continent ||
+        continentFromCode(countryCode, country);
+
+  return {
+    name: city,
+    detail:
+      reversePlace?.detail ||
+      (country !== "Country not identified"
+        ? `Selected coordinates in ${country}.`
+        : "Your selected coordinates."),
+    metadata: {
+      city,
+      region,
+      country,
+      countryCode,
+      continent
+    }
+  };
+}
+
 function findNearestCountryAndCoast(point, countries) {
   let best = null;
 
@@ -386,17 +462,15 @@ async function chooseLocation(lat, lng, name = "Selected point", detail = "", me
 
   if (needsOriginLookup) {
     showStatus("Identifying the selected location…");
-    const identifiedOrigin = await reverseGeocode(latitude, longitude);
+    const identifiedOrigin = await analyseOriginLocation(
+      latitude,
+      longitude
+    );
 
     if (lookupId !== activeLookup) return;
 
     if (identifiedOrigin) {
-      name =
-        identifiedOrigin.metadata?.city &&
-        identifiedOrigin.metadata.city !== "Place not identified"
-          ? identifiedOrigin.metadata.city
-          : identifiedOrigin.name || name;
-
+      name = identifiedOrigin.name || name;
       detail = identifiedOrigin.detail || detail;
       metadata = {
         ...metadata,
