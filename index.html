@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Find the exact opposite point on Earth from any city, address, or coordinate." />
+  <meta name="description" content="Discover the exact opposite point on Earth, its nearest country, closest populated place, and approximate distance to land." />
   <meta name="theme-color" content="#eaf6ff" />
-  <title>AntipodeFinder — Find the Other Side of Earth</title>
+  <title>AntipodeFinder — What’s on the Other Side of Earth?</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -52,9 +52,10 @@
 
       <div class="hero-copy">
         <p class="eyebrow">EXPLORE THE OTHER SIDE OF EARTH</p>
-        <h1>One place.<br />Two sides of the <span>world.</span></h1>
+        <h1>What’s on the other side of Earth?</h1>
         <p class="hero-subtitle">
-          Find the exact opposite point on Earth in an instant.
+          Search any city, address, landmark, or coordinates to discover its exact
+          antipode, nearest country, closest populated place, and approximate distance to land.
         </p>
 
         <form id="search-form" class="search-box" autocomplete="off">
@@ -63,11 +64,11 @@
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m20 20-4-4"></path>
             </svg>
-            <label class="sr-only" for="place-search">Search a city, address, or coordinates</label>
+            <label class="sr-only" for="place-search">Search a city, address, landmark, or coordinates</label>
             <input
               id="place-search"
               type="search"
-              placeholder="Search any city, place, address or coordinates..."
+              placeholder="Search any city, address, landmark or coordinates..."
               required
             />
           </div>
@@ -95,73 +96,54 @@
 
         <div id="globe" aria-label="Interactive 3D globe"></div>
 
-        <article id="origin-float-card" class="location-card origin-card">
+        <article class="location-card origin-card">
           <div class="card-label">
             <span class="card-dot origin-dot"></span>
-            Your location
+            Starting location
           </div>
           <h2 id="floating-origin-name">Choose a place</h2>
           <p id="floating-origin-coords">Search above to begin</p>
-          <span class="card-chip origin-chip">Starting point</span>
+          <span id="floating-origin-country" class="card-chip origin-chip">Starting point</span>
         </article>
 
-        <article id="antipode-float-card" class="location-card antipode-card">
+        <article class="location-card antipode-card">
           <div class="card-label">
             <span class="card-dot antipode-dot"></span>
-            Antipode
+            Exact antipode
           </div>
           <h2 id="floating-antipode-name">Opposite point</h2>
           <p id="floating-antipode-coords">Waiting for a location</p>
-          <span class="card-chip antipode-chip">Opposite side</span>
+          <span id="floating-antipode-country" class="card-chip antipode-chip">Nearest country</span>
         </article>
       </div>
 
       <div class="stats-ribbon" id="facts">
         <article>
           <span class="stat-icon">◎</span>
-          <div>
-            <small>Earth radius</small>
-            <strong>6,371 km</strong>
-          </div>
+          <div><small>Earth radius</small><strong>6,371 km</strong></div>
         </article>
-
         <article>
           <span class="stat-icon">↔</span>
-          <div>
-            <small>Average distance</small>
-            <strong>12,742 km</strong>
-          </div>
+          <div><small>Earth diameter</small><strong>12,742 km</strong></div>
         </article>
-
         <article>
           <span class="stat-icon">≋</span>
-          <div>
-            <small>Ocean coverage</small>
-            <strong>71%</strong>
-          </div>
+          <div><small>Ocean coverage</small><strong>71%</strong></div>
         </article>
-
         <article>
           <span class="stat-icon green">△</span>
-          <div>
-            <small>Land coverage</small>
-            <strong>29%</strong>
-          </div>
+          <div><small>Land coverage</small><strong>29%</strong></div>
         </article>
-
         <article>
           <span class="stat-icon purple">⌾</span>
-          <div>
-            <small>Every point</small>
-            <strong>Has one antipode</strong>
-          </div>
+          <div><small>Every location</small><strong>Has one antipode</strong></div>
         </article>
       </div>
     </section>
 
     <section id="result-section" class="result-section" hidden>
       <div class="section-heading">
-        <p class="eyebrow">YOUR RESULT</p>
+        <p class="eyebrow">YOUR ANTIPODE REPORT</p>
         <h2>
           <span id="result-origin-title">Starting point</span>
           <span class="result-arrow">↔</span>
@@ -175,6 +157,7 @@
             <span class="result-marker origin-dot"></span>
             <span>Starting point</span>
           </div>
+
           <h3 id="origin-city">Selected place</h3>
           <p id="origin-detail">Your selected location.</p>
           <strong id="origin-coords">—</strong>
@@ -187,6 +170,14 @@
             <div>
               <dt>Country</dt>
               <dd id="origin-country">Not identified</dd>
+            </div>
+            <div>
+              <dt>Continent</dt>
+              <dd id="origin-continent">Not identified</dd>
+            </div>
+            <div>
+              <dt>Position</dt>
+              <dd>Starting location</dd>
             </div>
           </dl>
         </article>
@@ -203,27 +194,52 @@
         <article class="result-card result-antipode">
           <div class="result-card-top">
             <span class="result-marker antipode-dot"></span>
-            <span>Antipode</span>
+            <span>Exact antipode</span>
           </div>
+
           <h3 id="antipode-city">Opposite point</h3>
-          <p id="antipode-detail">Searching for the nearest named place.</p>
+          <p id="antipode-detail">Searching for geographic context.</p>
           <strong id="antipode-coords">—</strong>
 
           <dl>
             <div>
-              <dt>Region or area</dt>
-              <dd id="antipode-region">Not identified</dd>
+              <dt>Exact location</dt>
+              <dd id="antipode-location-type">Checking…</dd>
             </div>
             <div>
-              <dt>Country</dt>
-              <dd id="antipode-country">Not identified</dd>
+              <dt>Nearest country</dt>
+              <dd id="antipode-country">Searching…</dd>
+            </div>
+            <div>
+              <dt>Closest populated place</dt>
+              <dd id="antipode-nearest-place">Searching…</dd>
+            </div>
+            <div>
+              <dt>Approx. distance</dt>
+              <dd id="antipode-nearest-distance">Searching…</dd>
+            </div>
+            <div>
+              <dt>Region or area</dt>
+              <dd id="antipode-region">Searching…</dd>
+            </div>
+            <div>
+              <dt>Continent</dt>
+              <dd id="antipode-continent">Searching…</dd>
             </div>
           </dl>
         </article>
       </div>
 
+      <div class="summary-card">
+        <span class="summary-icon" aria-hidden="true">i</span>
+        <p id="result-summary">
+          Select a location to generate a geographic explanation.
+        </p>
+      </div>
+
       <div class="result-actions">
         <button id="copy-btn" type="button">Copy result</button>
+        <button id="share-btn" type="button">Share link</button>
         <button id="new-search-btn" class="primary-action" type="button">New search</button>
       </div>
     </section>
@@ -238,17 +254,17 @@
         <article>
           <span>01</span>
           <h3>Choose a point</h3>
-          <p>Search for a city, country, address, or click directly on the globe.</p>
+          <p>Search for a city, country, address, landmark, coordinates, or click the globe.</p>
         </article>
         <article>
           <span>02</span>
-          <h3>Reverse latitude</h3>
-          <p>North becomes south, and south becomes north.</p>
+          <h3>Calculate the antipode</h3>
+          <p>Latitude changes sign and longitude moves exactly 180 degrees.</p>
         </article>
         <article>
           <span>03</span>
-          <h3>Shift longitude</h3>
-          <p>Move exactly 180 degrees around Earth to reach the opposite point.</p>
+          <h3>Find nearby land</h3>
+          <p>The site searches outward to estimate the nearest country and populated place.</p>
         </article>
       </div>
     </section>
@@ -256,12 +272,12 @@
     <section id="about" class="about-section">
       <div>
         <p class="eyebrow">ABOUT ANTIPODES</p>
-        <h2>Geography made visual, simple, and memorable.</h2>
+        <h2>Geography made visual, useful, and memorable.</h2>
       </div>
       <p>
-        AntipodeFinder turns a geographic calculation into an interactive journey.
-        It is designed for travellers, students, teachers, and anyone curious about
-        what lies on the other side of the world.
+        AntipodeFinder transforms a coordinate calculation into a geographic report.
+        It shows the exact opposite point and adds useful context for locations that fall
+        in the ocean, including an estimated nearest country, nearby populated place, and distance.
       </p>
     </section>
   </main>

@@ -1,6 +1,6 @@
-# AntipodeFinder V4
+# AntipodeFinder V5
 
-Bright redesign based on the approved visual concept.
+Bright production-style redesign with richer antipode information.
 
 ## Included files
 
@@ -8,22 +8,30 @@ Bright redesign based on the approved visual concept.
 - `assets/css/styles.css`
 - `assets/js/app.js`
 
+## New in V5
+
+- New headline: “What’s on the other side of Earth?”
+- Exact antipode coordinates
+- Ocean/land indication
+- Estimated nearest country
+- Estimated nearest populated place
+- Approximate distance to identified nearby land/place
+- Continent field
+- Shareable URL parameters
+- Copy result and Share link buttons
+- Direct coordinate search, such as `34.02, -6.84`
+- Existing city search, suggestions, geolocation, globe click, markers, and animated arc
+
+## Important accuracy note
+
+The nearest-country feature performs a progressive radial search using public reverse-geocoding results. It is useful for discovery, but the distance is approximate and may identify the nearest named feature rather than the mathematically exact coastline point.
+
 ## Installation
 
-Replace the matching files in your current project, test locally, and then deploy:
+Replace the matching files in your project and test locally.
 
 ```bash
 git add .
-git commit -m "Launch AntipodeFinder V4"
+git commit -m "Launch AntipodeFinder V5"
 git push
 ```
-
-## Main changes
-
-- Bright sky background
-- Headline and search above the globe
-- Larger, clearer Earth
-- Floating origin and antipode cards
-- Statistics ribbon
-- Responsive result, education, and about sections
-- Existing search, suggestions, geolocation, globe click, reverse lookup, and copy-result functionality
