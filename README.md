@@ -1,6 +1,6 @@
-# AntipodeFinder V3
+# AntipodeFinder V4
 
-A complete visual and structural redesign of AntipodeFinder.com.
+Bright redesign based on the approved visual concept.
 
 ## Included files
 
@@ -10,21 +10,20 @@ A complete visual and structural redesign of AntipodeFinder.com.
 
 ## Installation
 
-Replace the three corresponding files in your current project.
-
-Then test locally and deploy:
+Replace the matching files in your current project, test locally, and then deploy:
 
 ```bash
 git add .
-git commit -m "Launch AntipodeFinder V3"
+git commit -m "Launch AntipodeFinder V4"
 git push
 ```
 
-## Main design ideas
+## Main changes
 
-- Globe-first experience
-- Editorial typography and whitespace
-- Premium interactive result section
-- Educational content and popular searches
-- Responsive mobile layout
-- Search, geolocation, reverse lookup, globe click, and copy-result functionality
+- Bright sky background
+- Headline and search above the globe
+- Larger, clearer Earth
+- Floating origin and antipode cards
+- Statistics ribbon
+- Responsive result, education, and about sections
+- Existing search, suggestions, geolocation, globe click, reverse lookup, and copy-result functionality

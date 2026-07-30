@@ -16,17 +16,17 @@ const globe = Globe()(globeElement)
   .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
   .bumpImageUrl("https://unpkg.com/three-globe/example/img/earth-topology.png")
   .showAtmosphere(true)
-  .atmosphereColor("#56dfeb")
-  .atmosphereAltitude(0.18)
-  .pointAltitude(0.03)
+  .atmosphereColor("#77d5ff")
+  .atmosphereAltitude(0.22)
+  .pointAltitude(0.035)
   .pointRadius(0.34)
   .pointLabel(
     (point) =>
       `<strong>${escapeHtml(point.label)}</strong><br>${formatCoordinates(point.lat, point.lng)}`
   )
-  .arcColor(() => ["#47e6d2", "#ffb95d"])
+  .arcColor(() => ["#1875ff", "#ff7a18"])
   .arcAltitudeAutoScale(0.32)
-  .arcStroke(0.62)
+  .arcStroke(0.68)
   .arcDashLength(0.42)
   .arcDashGap(0.14)
   .arcDashAnimateTime(1700)
@@ -35,9 +35,9 @@ const globe = Globe()(globeElement)
   });
 
 globe.controls().autoRotate = true;
-globe.controls().autoRotateSpeed = 0.38;
+globe.controls().autoRotateSpeed = 0.32;
 globe.controls().enableDamping = true;
-globe.pointOfView({ lat: 24, lng: -12, altitude: 2.1 }, 0);
+globe.pointOfView({ lat: 20, lng: -20, altitude: 1.9 }, 0);
 
 function resizeGlobe() {
   globe.width(globeElement.clientWidth).height(globeElement.clientHeight);
@@ -96,13 +96,13 @@ function chooseLocation(lat, lng, name = "Selected point", detail = "", metadata
       {
         lat: latitude,
         lng: longitude,
-        color: "#47e6d2",
+        color: "#1875ff",
         label: name
       },
       {
         lat: antipode.lat,
         lng: antipode.lng,
-        color: "#ffb95d",
+        color: "#ff7a18",
         label: "Antipode"
       }
     ])
@@ -118,16 +118,12 @@ function chooseLocation(lat, lng, name = "Selected point", detail = "", metadata
   ]);
 
   globe.pointOfView(
-    { lat: latitude, lng: longitude, altitude: 1.68 },
-    1050
+    { lat: latitude, lng: longitude, altitude: 1.65 },
+    1100
   );
 
   renderResult();
   resultSection.hidden = false;
-
-  window.setTimeout(() => {
-    resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 260);
 
   reverseGeocode(antipode.lat, antipode.lng).then((place) => {
     if (lookupId !== activeLookup) return;
@@ -159,6 +155,11 @@ function chooseLocation(lat, lng, name = "Selected point", detail = "", metadata
 function renderResult() {
   const { origin, antipode } = currentResult;
   if (!origin || !antipode) return;
+
+  $("#floating-origin-name").textContent = origin.metadata.city || origin.name;
+  $("#floating-origin-coords").textContent = formatCoordinates(origin.lat, origin.lng);
+  $("#floating-antipode-name").textContent = antipode.metadata.city || antipode.name;
+  $("#floating-antipode-coords").textContent = formatCoordinates(antipode.lat, antipode.lng);
 
   $("#result-origin-title").textContent = origin.name;
   $("#result-antipode-title").textContent = antipode.name;
@@ -295,6 +296,10 @@ function renderSuggestions(features) {
         getPlaceDetail(properties),
         getPlaceMetadata(properties)
       );
+
+      window.setTimeout(() => {
+        resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 650);
     });
 
     suggestionsElement.appendChild(button);
@@ -337,6 +342,10 @@ async function searchAndChoose(query) {
       getPlaceDetail(properties),
       getPlaceMetadata(properties)
     );
+
+    window.setTimeout(() => {
+      resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 650);
   } catch (error) {
     showStatus(
       error.message === "No result"
@@ -370,7 +379,7 @@ $("#search-form").addEventListener("submit", (event) => {
   searchAndChoose(searchInput.value);
 });
 
-$("#locate-btn").addEventListener("click", () => {
+function locateUser() {
   if (!navigator.geolocation) {
     showStatus("Geolocation is not supported by this browser.");
     return;
@@ -391,6 +400,10 @@ $("#locate-btn").addEventListener("click", () => {
         place?.detail || "Detected by your device.",
         place?.metadata || {}
       );
+
+      window.setTimeout(() => {
+        resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 650);
     },
     () => {
       showStatus("Location access was unavailable. Search for your city instead.");
@@ -401,21 +414,18 @@ $("#locate-btn").addEventListener("click", () => {
       maximumAge: 300000
     }
   );
-});
+}
 
-$$("[data-place]").forEach((button) => {
-  button.addEventListener("click", () => {
-    searchInput.value = button.dataset.place;
-    searchAndChoose(button.dataset.place);
-  });
-});
+$("#locate-btn").addEventListener("click", locateUser);
+$("#header-location-btn").addEventListener("click", locateUser);
 
 $("#new-search-btn").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
+
   window.setTimeout(() => {
     searchInput.focus();
     searchInput.select();
-  }, 550);
+  }, 500);
 });
 
 $("#copy-btn").addEventListener("click", async () => {
@@ -440,7 +450,7 @@ $("#copy-btn").addEventListener("click", async () => {
 });
 
 document.addEventListener("click", (event) => {
-  if (!event.target.closest(".search-panel")) {
+  if (!event.target.closest(".search-box")) {
     suggestionsElement.hidden = true;
   }
 });

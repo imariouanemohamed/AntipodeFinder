@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Find the exact opposite point on Earth from any city, address, or coordinate." />
-  <meta name="theme-color" content="#06131c" />
-  <title>AntipodeFinder — Explore the Opposite Side of Earth</title>
+  <meta name="theme-color" content="#eaf6ff" />
+  <title>AntipodeFinder — Find the Other Side of Earth</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="assets/css/styles.css" />
   <script defer src="https://unpkg.com/globe.gl"></script>
@@ -17,322 +17,269 @@
 </head>
 
 <body>
-  <div class="noise" aria-hidden="true"></div>
-
   <header class="site-header">
     <a class="brand" href="#home" aria-label="AntipodeFinder home">
-      <span class="brand-symbol" aria-hidden="true">
-        <span></span>
-        <span></span>
+      <span class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="18"></circle>
+          <path d="M6 24h36M24 6c6 5 9 11 9 18s-3 13-9 18M24 6c-6 5-9 11-9 18s3 13 9 18M10 14h28M10 34h28"></path>
+          <circle cx="12" cy="24" r="3"></circle>
+          <circle cx="36" cy="24" r="3"></circle>
+        </svg>
       </span>
-      <span class="brand-word">Antipode<span>Finder</span></span>
+      <span class="brand-name">Antipode<span>Finder</span></span>
     </a>
 
-    <nav class="desktop-nav" aria-label="Primary navigation">
-      <a href="#finder">Finder</a>
-      <a href="#discover">Discover</a>
+    <nav aria-label="Primary navigation">
+      <a class="active" href="#home">Home</a>
+      <a href="#finder">Explore</a>
+      <a href="#how-it-works">How it works</a>
       <a href="#facts">Facts</a>
       <a href="#about">About</a>
     </nav>
 
-    <a class="header-cta" href="#finder">Find your antipode</a>
+    <button id="header-location-btn" class="header-location-btn" type="button">
+      <span aria-hidden="true">⌖</span>
+      My location
+    </button>
   </header>
 
   <main id="home">
     <section class="hero" id="finder">
+      <div class="cloud cloud-one" aria-hidden="true"></div>
+      <div class="cloud cloud-two" aria-hidden="true"></div>
+      <div class="cloud cloud-three" aria-hidden="true"></div>
+
       <div class="hero-copy">
-        <p class="kicker">
-          <span></span>
-          Explore the far side of Earth
+        <p class="eyebrow">EXPLORE THE OTHER SIDE OF EARTH</p>
+        <h1>One place.<br />Two sides of the <span>world.</span></h1>
+        <p class="hero-subtitle">
+          Find the exact opposite point on Earth in an instant.
         </p>
 
-        <h1>
-          One place.<br />
-          Two sides<br />
-          of the world.
-        </h1>
-
-        <p class="hero-intro">
-          Enter any city, address, or coordinate to discover the exact point
-          directly opposite it on Earth.
-        </p>
-
-        <form id="search-form" class="search-panel" autocomplete="off">
-          <div class="search-input-wrap">
+        <form id="search-form" class="search-box" autocomplete="off">
+          <div class="search-field">
             <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/>
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-4-4"></path>
             </svg>
-            <label class="sr-only" for="place-search">Search any place</label>
+            <label class="sr-only" for="place-search">Search a city, address, or coordinates</label>
             <input
               id="place-search"
               type="search"
-              placeholder="Search city, country, or address"
+              placeholder="Search any city, place, address or coordinates..."
               required
             />
           </div>
 
           <button type="submit">
-            Explore
+            Find antipode
             <span aria-hidden="true">↗</span>
           </button>
 
           <div id="suggestions" class="suggestions" hidden></div>
         </form>
 
-        <div class="quick-row">
-          <button id="locate-btn" class="text-button" type="button">
-            <span class="location-pulse" aria-hidden="true"></span>
-            Use my current location
-          </button>
-
-          <div class="quick-links" aria-label="Popular searches">
-            <span>Try</span>
-            <button type="button" data-place="Rabat">Rabat</button>
-            <button type="button" data-place="Tokyo">Tokyo</button>
-            <button type="button" data-place="New York">New York</button>
-          </div>
-        </div>
+        <button id="locate-btn" class="locate-btn" type="button">
+          <span aria-hidden="true">⌖</span>
+          Use my current location
+        </button>
 
         <p id="status" class="status" aria-live="polite"></p>
       </div>
 
-      <div class="globe-column">
+      <div class="globe-scene">
         <div class="orbit orbit-one" aria-hidden="true"></div>
         <div class="orbit orbit-two" aria-hidden="true"></div>
-        <div class="globe-aura" aria-hidden="true"></div>
-        <div id="globe" aria-label="Interactive 3D Earth"></div>
+        <div class="globe-glow" aria-hidden="true"></div>
 
-        <div class="globe-caption">
-          <span class="caption-dot"></span>
-          <div>
-            <strong>Interactive Earth</strong>
-            <small>Drag, zoom, or click any point</small>
+        <div id="globe" aria-label="Interactive 3D globe"></div>
+
+        <article id="origin-float-card" class="location-card origin-card">
+          <div class="card-label">
+            <span class="card-dot origin-dot"></span>
+            Your location
           </div>
-        </div>
+          <h2 id="floating-origin-name">Choose a place</h2>
+          <p id="floating-origin-coords">Search above to begin</p>
+          <span class="card-chip origin-chip">Starting point</span>
+        </article>
+
+        <article id="antipode-float-card" class="location-card antipode-card">
+          <div class="card-label">
+            <span class="card-dot antipode-dot"></span>
+            Antipode
+          </div>
+          <h2 id="floating-antipode-name">Opposite point</h2>
+          <p id="floating-antipode-coords">Waiting for a location</p>
+          <span class="card-chip antipode-chip">Opposite side</span>
+        </article>
       </div>
 
-      <div class="scroll-cue" aria-hidden="true">
-        <span>Scroll to discover</span>
-        <i></i>
+      <div class="stats-ribbon" id="facts">
+        <article>
+          <span class="stat-icon">◎</span>
+          <div>
+            <small>Earth radius</small>
+            <strong>6,371 km</strong>
+          </div>
+        </article>
+
+        <article>
+          <span class="stat-icon">↔</span>
+          <div>
+            <small>Average distance</small>
+            <strong>12,742 km</strong>
+          </div>
+        </article>
+
+        <article>
+          <span class="stat-icon">≋</span>
+          <div>
+            <small>Ocean coverage</small>
+            <strong>71%</strong>
+          </div>
+        </article>
+
+        <article>
+          <span class="stat-icon green">△</span>
+          <div>
+            <small>Land coverage</small>
+            <strong>29%</strong>
+          </div>
+        </article>
+
+        <article>
+          <span class="stat-icon purple">⌾</span>
+          <div>
+            <small>Every point</small>
+            <strong>Has one antipode</strong>
+          </div>
+        </article>
       </div>
     </section>
 
     <section id="result-section" class="result-section" hidden>
-      <div class="section-label">Your result</div>
+      <div class="section-heading">
+        <p class="eyebrow">YOUR RESULT</p>
+        <h2>
+          <span id="result-origin-title">Starting point</span>
+          <span class="result-arrow">↔</span>
+          <span id="result-antipode-title">Antipode</span>
+        </h2>
+      </div>
 
-      <div class="result-shell">
-        <div class="result-heading">
+      <div class="result-grid">
+        <article class="result-card result-origin">
+          <div class="result-card-top">
+            <span class="result-marker origin-dot"></span>
+            <span>Starting point</span>
+          </div>
+          <h3 id="origin-city">Selected place</h3>
+          <p id="origin-detail">Your selected location.</p>
+          <strong id="origin-coords">—</strong>
+
+          <dl>
+            <div>
+              <dt>Region</dt>
+              <dd id="origin-region">Not identified</dd>
+            </div>
+            <div>
+              <dt>Country</dt>
+              <dd id="origin-country">Not identified</dd>
+            </div>
+          </dl>
+        </article>
+
+        <div class="distance-card">
+          <span class="distance-line"></span>
           <div>
-            <p class="eyebrow">FROM HERE TO THERE</p>
-            <h2>
-              <span id="result-origin-title">Selected place</span>
-              <span class="swap-symbol">↔</span>
-              <span id="result-antipode-title">Opposite point</span>
-            </h2>
+            <strong>12,742 km</strong>
+            <small>through Earth</small>
           </div>
-
-          <div class="result-actions">
-            <button id="copy-btn" type="button">Copy result</button>
-            <button id="new-search-btn" class="primary-small" type="button">New search</button>
-          </div>
+          <span class="distance-line"></span>
         </div>
 
-        <div class="route-grid">
-          <article class="place-panel place-panel-origin">
-            <div class="place-type">
-              <span class="marker marker-origin"></span>
-              Starting point
-            </div>
-
-            <h3 id="origin-city">Selected location</h3>
-            <p id="origin-detail" class="place-description">Your chosen point on Earth.</p>
-            <p id="origin-coords" class="large-coordinates">—</p>
-
-            <dl class="place-meta">
-              <div>
-                <dt>Region</dt>
-                <dd id="origin-region">Not identified</dd>
-              </div>
-              <div>
-                <dt>Country</dt>
-                <dd id="origin-country">Not identified</dd>
-              </div>
-            </dl>
-          </article>
-
-          <div class="route-center">
-            <div class="route-line route-line-top"></div>
-            <div class="earth-core">
-              <span class="earth-ring"></span>
-              <strong>12,742</strong>
-              <small>km through Earth</small>
-            </div>
-            <div class="route-line route-line-bottom"></div>
+        <article class="result-card result-antipode">
+          <div class="result-card-top">
+            <span class="result-marker antipode-dot"></span>
+            <span>Antipode</span>
           </div>
+          <h3 id="antipode-city">Opposite point</h3>
+          <p id="antipode-detail">Searching for the nearest named place.</p>
+          <strong id="antipode-coords">—</strong>
 
-          <article class="place-panel place-panel-antipode">
-            <div class="place-type">
-              <span class="marker marker-antipode"></span>
-              Antipode
+          <dl>
+            <div>
+              <dt>Region or area</dt>
+              <dd id="antipode-region">Not identified</dd>
             </div>
+            <div>
+              <dt>Country</dt>
+              <dd id="antipode-country">Not identified</dd>
+            </div>
+          </dl>
+        </article>
+      </div>
 
-            <h3 id="antipode-city">Opposite point</h3>
-            <p id="antipode-detail" class="place-description">Searching for the nearest named place.</p>
-            <p id="antipode-coords" class="large-coordinates">—</p>
-
-            <dl class="place-meta">
-              <div>
-                <dt>Region or area</dt>
-                <dd id="antipode-region">Not identified</dd>
-              </div>
-              <div>
-                <dt>Country</dt>
-                <dd id="antipode-country">Not identified</dd>
-              </div>
-            </dl>
-          </article>
-        </div>
-
-        <div class="result-note">
-          <span aria-hidden="true">i</span>
-          <p id="result-note-text">
-            Many locations have an antipode in open ocean because water covers most of Earth.
-          </p>
-        </div>
+      <div class="result-actions">
+        <button id="copy-btn" type="button">Copy result</button>
+        <button id="new-search-btn" class="primary-action" type="button">New search</button>
       </div>
     </section>
 
-    <section class="story-section" id="discover">
-      <div class="story-heading">
+    <section id="how-it-works" class="content-section">
+      <div class="section-heading compact">
         <p class="eyebrow">HOW IT WORKS</p>
-        <h2>A simple idea on a<br />remarkable planet.</h2>
-        <p>
-          Every point on Earth has one exact opposite. Its latitude changes
-          direction, while its longitude moves halfway around the globe.
-        </p>
+        <h2>One calculation. A whole world apart.</h2>
       </div>
 
-      <div class="story-cards">
-        <article class="story-card story-card-large">
-          <span class="card-number">01</span>
-          <div class="mini-globe" aria-hidden="true">
-            <div class="mini-line"></div>
-            <span class="mini-dot mini-dot-a"></span>
-            <span class="mini-dot mini-dot-b"></span>
-          </div>
-          <div>
-            <h3>Choose any point</h3>
-            <p>Search for a place, use your current location, or click directly on the globe.</p>
-          </div>
+      <div class="steps-grid">
+        <article>
+          <span>01</span>
+          <h3>Choose a point</h3>
+          <p>Search for a city, country, address, or click directly on the globe.</p>
         </article>
-
-        <article class="story-card">
-          <span class="card-number">02</span>
-          <div class="formula-visual">
-            <span>34.02° N</span>
-            <i>→</i>
-            <span>34.02° S</span>
-          </div>
-          <div>
-            <h3>Reverse latitude</h3>
-            <p>North becomes south, and south becomes north.</p>
-          </div>
+        <article>
+          <span>02</span>
+          <h3>Reverse latitude</h3>
+          <p>North becomes south, and south becomes north.</p>
         </article>
-
-        <article class="story-card">
-          <span class="card-number">03</span>
-          <div class="formula-visual">
-            <span>6.84° W</span>
-            <i>+180°</i>
-            <span>173.16° E</span>
-          </div>
-          <div>
-            <h3>Shift longitude</h3>
-            <p>Move exactly 180 degrees around the planet.</p>
-          </div>
+        <article>
+          <span>03</span>
+          <h3>Shift longitude</h3>
+          <p>Move exactly 180 degrees around Earth to reach the opposite point.</p>
         </article>
       </div>
     </section>
 
-    <section class="facts-section" id="facts">
-      <div class="facts-copy">
-        <p class="eyebrow">EARTH IN NUMBERS</p>
-        <h2>The planet between both points.</h2>
-      </div>
-
-      <div class="facts-grid">
-        <article>
-          <strong>6,371</strong>
-          <span>km</span>
-          <p>Average radius of Earth</p>
-        </article>
-        <article>
-          <strong>12,742</strong>
-          <span>km</span>
-          <p>Approximate diameter through Earth</p>
-        </article>
-        <article>
-          <strong>71</strong>
-          <span>%</span>
-          <p>Earth's surface covered by ocean</p>
-        </article>
-        <article>
-          <strong>1</strong>
-          <span>point</span>
-          <p>Exact antipode for every location</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="explore-section">
-      <div class="explore-card">
-        <div>
-          <p class="eyebrow">POPULAR EXPLORATIONS</p>
-          <h2>See the world from its opposite side.</h2>
-        </div>
-
-        <div class="city-links">
-          <button type="button" data-place="London">London <span>↗</span></button>
-          <button type="button" data-place="Sydney">Sydney <span>↗</span></button>
-          <button type="button" data-place="Buenos Aires">Buenos Aires <span>↗</span></button>
-          <button type="button" data-place="Shanghai">Shanghai <span>↗</span></button>
-          <button type="button" data-place="Madrid">Madrid <span>↗</span></button>
-          <button type="button" data-place="Auckland">Auckland <span>↗</span></button>
-        </div>
-      </div>
-    </section>
-
-    <section class="about-section" id="about">
-      <p class="eyebrow">ABOUT ANTIPODES</p>
-      <div class="about-grid">
+    <section id="about" class="about-section">
+      <div>
+        <p class="eyebrow">ABOUT ANTIPODES</p>
         <h2>Geography made visual, simple, and memorable.</h2>
-        <div>
-          <p>
-            AntipodeFinder turns a geographic calculation into an interactive
-            journey. It is designed for curious travellers, students, teachers,
-            and anyone who has ever wondered what lies on the other side of the world.
-          </p>
-          <a href="#finder">Explore a location <span>↗</span></a>
-        </div>
       </div>
+      <p>
+        AntipodeFinder turns a geographic calculation into an interactive journey.
+        It is designed for travellers, students, teachers, and anyone curious about
+        what lies on the other side of the world.
+      </p>
     </section>
   </main>
 
   <footer>
-    <a class="brand footer-brand" href="#home">
-      <span class="brand-symbol" aria-hidden="true">
-        <span></span>
-        <span></span>
+    <a class="brand" href="#home">
+      <span class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="18"></circle>
+          <path d="M6 24h36M24 6c6 5 9 11 9 18s-3 13-9 18M24 6c-6 5-9 11-9 18s3 13 9 18M10 14h28M10 34h28"></path>
+          <circle cx="12" cy="24" r="3"></circle>
+          <circle cx="36" cy="24" r="3"></circle>
+        </svg>
       </span>
-      <span class="brand-word">Antipode<span>Finder</span></span>
+      <span class="brand-name">Antipode<span>Finder</span></span>
     </a>
-
     <p>Explore the planet from a completely different angle.</p>
-
-    <div class="footer-bottom">
-      <span>© <span id="year"></span> AntipodeFinder.com</span>
-      <span>Map data © OpenStreetMap contributors</span>
-    </div>
+    <small>© <span id="year"></span> AntipodeFinder.com · Map data © OpenStreetMap contributors</small>
   </footer>
 </body>
 </html>
