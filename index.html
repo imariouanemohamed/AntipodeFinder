@@ -42,11 +42,27 @@
       <a class="side-link" href="#ocean">≋ Ocean Explorer</a>
       <a class="side-link" href="#facts">▥ Earth Statistics</a>
     </section>
-    <section class="discover-card">
-      <p class="sidebar-title">DISCOVER MORE</p>
-      <p>Explore a random place, famous locations, and geography facts.</p>
-      <button id="discover-random-btn" type="button">🎲 Random location</button>
-      <button id="discover-famous-btn" type="button">🏛 Famous places</button>
+    <section class="discover-card" aria-labelledby="discover-more-title">
+      <p id="discover-more-title" class="sidebar-title">DISCOVER MORE</p>
+      <p class="discover-description">Explore a random place or discover the antipodes of famous landmarks.</p>
+
+      <button id="discover-random-btn" class="discover-action" type="button">
+        <span class="discover-action-icon" aria-hidden="true">🎲</span>
+        <span class="discover-action-copy">
+          <strong>Random Explorer</strong>
+          <small>Discover a random place on Earth</small>
+        </span>
+        <span class="discover-action-arrow" aria-hidden="true">→</span>
+      </button>
+
+      <button id="discover-famous-btn" class="discover-action" type="button">
+        <span class="discover-action-icon" aria-hidden="true">🏛️</span>
+        <span class="discover-action-copy">
+          <strong>Famous Places</strong>
+          <small>Explore famous landmarks</small>
+        </span>
+        <span class="discover-action-arrow" aria-hidden="true">→</span>
+      </button>
     </section>
     <footer class="sidebar-footer">
       <strong>AntipodeFinder</strong>

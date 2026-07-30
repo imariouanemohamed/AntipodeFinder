@@ -51,3 +51,10 @@ git push
 
 - Removed Travel Planner from the sidebar and Explore More section.
 - Removed Tectonic Plates from the sidebar.
+
+
+## V7.2 changes
+- Fixed the Discover More “Random Explorer” action by adding the missing `randomLocation()` function.
+- The left-sidebar Random Explorer now uses the same tested function.
+- Redesigned Random Explorer and Famous Places as compact navigation cards matching the site typography, borders, spacing, and hover behavior.
+- Added keyboard focus styling and clearer secondary text.
