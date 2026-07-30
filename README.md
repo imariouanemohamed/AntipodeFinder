@@ -1,4 +1,4 @@
-# AntipodeFinder V6.4
+# AntipodeFinder V6.5
 
 V6 replaces the unreliable repeated ocean reverse-geocoding loop with a coastline-based geographic engine.
 
@@ -90,3 +90,11 @@ Cloudflare Workers should serve the project normally because these resources are
 - Country and continent are still identified when no nearby city is returned.
 - Region falls back to the country instead of remaining blank.
 - Remote deserts and sparsely mapped areas return a useful result such as “Location in Sudan”.
+
+
+## V6.5 visual adjustment
+
+- Lowered the 3D globe by 55 px on desktop.
+- Used smaller downward offsets on tablets and phones.
+- Moved the globe glow with the Earth so the visual remains balanced.
+- The floating location cards and search panel remain in their current positions.

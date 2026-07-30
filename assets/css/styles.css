@@ -62,9 +62,14 @@ h1{max-width:980px;margin:0 auto;font-size:clamp(54px,5.6vw,84px);line-height:1;
 .status{min-height:20px;margin:8px 0 0;color:var(--ink-soft);font-size:13px}
 
 .globe-scene{position:absolute;left:50%;bottom:62px;width:min(1120px,90%);height:610px;transform:translateX(-50%)}
-#globe{position:absolute;inset:0;z-index:4}
+#globe{
+  position:absolute;
+  inset:0;
+  z-index:4;
+  transform:translateY(55px);
+}
 #globe canvas{outline:0}
-.globe-glow{position:absolute;left:50%;top:50%;width:610px;aspect-ratio:1;transform:translate(-50%,-42%);border-radius:50%;background:rgba(65,177,255,.23);filter:blur(68px)}
+.globe-glow{position:absolute;left:50%;top:50%;width:610px;aspect-ratio:1;transform:translate(-50%,-32%);border-radius:50%;background:rgba(65,177,255,.23);filter:blur(68px)}
 .orbit{position:absolute;left:50%;top:49%;width:89%;height:54%;transform:translate(-50%,-50%) rotate(-11deg);border:1px solid rgba(24,117,255,.12);border-radius:50%}
 .orbit-two{width:103%;height:64%;transform:translate(-50%,-50%) rotate(19deg);border-color:rgba(255,122,24,.09)}
 
@@ -159,4 +164,13 @@ footer p{margin:0;color:var(--ink-soft);text-align:right}footer small{grid-colum
   .location-card h2{font-size:16px}.stats-ribbon{grid-template-columns:1fr;gap:0;bottom:18px;padding:12px 16px}
   .stats-ribbon article{padding:10px 0;border-right:0;border-bottom:1px solid var(--line)}.stats-ribbon article:last-child{border-bottom:0}
   .result-card dl{grid-template-columns:1fr}.result-actions{flex-direction:column}.result-actions button{width:100%}
+}
+
+
+@media(max-width:820px){
+  #globe{transform:translateY(38px)}
+}
+
+@media(max-width:600px){
+  #globe{transform:translateY(28px)}
 }
