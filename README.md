@@ -1,4 +1,4 @@
-# AntipodeFinder V6
+# AntipodeFinder V6.1
 
 V6 replaces the unreliable repeated ocean reverse-geocoding loop with a coastline-based geographic engine.
 
@@ -53,3 +53,13 @@ V6 loads:
 - Photon geocoding
 
 Cloudflare Workers should serve the project normally because these resources are requested by the visitor's browser.
+
+
+## V6.1 interface update
+
+- Added a two-option segmented control inside the main finder:
+  - Use my current location
+  - Choose another location
+- Removed the separate “Use my current location” button below the search bar.
+- Selecting “Use my current location” immediately starts browser geolocation.
+- Selecting “Choose another location” focuses the city/country/address search field.

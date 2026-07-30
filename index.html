@@ -60,33 +60,54 @@
           antipode, nearest country, closest populated place, and approximate distance to land.
         </p>
 
-        <form id="search-form" class="search-box" autocomplete="off">
-          <div class="search-field">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="7"></circle>
-              <path d="m20 20-4-4"></path>
-            </svg>
-            <label class="sr-only" for="place-search">Search a city, address, landmark, or coordinates</label>
-            <input
-              id="place-search"
-              type="search"
-              placeholder="Search any city, address, landmark or coordinates..."
-              required
-            />
+        <div class="finder-panel">
+          <div class="finder-tabs" role="tablist" aria-label="Choose how to find your antipode">
+            <button
+              id="current-location-tab"
+              class="finder-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+            >
+              <span aria-hidden="true">⌖</span>
+              Use my current location
+            </button>
+
+            <button
+              id="search-location-tab"
+              class="finder-tab active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+            >
+              <span aria-hidden="true">⌕</span>
+              Choose another location
+            </button>
           </div>
 
-          <button type="submit">
-            Find antipode
-            <span aria-hidden="true">↗</span>
-          </button>
+          <form id="search-form" class="search-box" autocomplete="off">
+            <div class="search-field">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4"></path>
+              </svg>
+              <label class="sr-only" for="place-search">Search a city, country, address, landmark, or coordinates</label>
+              <input
+                id="place-search"
+                type="search"
+                placeholder="Search a city, country, address or coordinates..."
+                required
+              />
+            </div>
 
-          <div id="suggestions" class="suggestions" hidden></div>
-        </form>
+            <button type="submit">
+              Find antipode
+              <span aria-hidden="true">↗</span>
+            </button>
 
-        <button id="locate-btn" class="locate-btn" type="button">
-          <span aria-hidden="true">⌖</span>
-          Use my current location
-        </button>
+            <div id="suggestions" class="suggestions" hidden></div>
+          </form>
+        </div>
 
         <p id="status" class="status" aria-live="polite"></p>
       </div>
